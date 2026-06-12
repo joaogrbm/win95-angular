@@ -1,1 +1,46 @@
 /* You can add global styles to this file, and also import other style files */
+/* src/styles.scss */
+
+// Variáveis de Cor Windows 95
+$color-bg-desktop: #008080; // Teal (fundo da área de trabalho)
+$color-bg-window: #c0c0c0;  // Cinza claro (fundo de janelas/botões)
+$color-title-bar-active: #000080; // Azul escuro
+$color-title-bar-inactive: #808080; // Cinza escuro
+$color-text-title: #ffffff; // Branco (texto da barra de título)
+$color-shadow-outer: #000000;
+$color-shadow-inner: #808080;
+$color-highlight-outer: #ffffff;
+$color-highlight-inner: #dfdfdf;
+
+// Fontes: MS Sans Serif ou Tahoma eram comuns
+body {
+  font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+  margin: 0;
+  overflow: hidden; // Impede barra de rolagem na área de trabalho
+  background-color: $color-bg-desktop;
+  color: #000000; // Preto para texto geral
+}
+
+/* src/styles.scss (continuação) */
+
+// Mixin para borda 3D "para fora" (botões, janelas ativas)
+@mixin border-beveled-out {
+  border-top: 2px solid $color-highlight-outer;
+  border-left: 2px solid $color-highlight-outer;
+  border-right: 2px solid $color-shadow-outer;
+  border-bottom: 2px solid $color-shadow-outer;
+  box-shadow: 
+    inset 1px 1px 0px $color-highlight-inner,
+    inset -1px -1px 0px $color-shadow-inner;
+}
+
+// Mixin para borda 3D "para dentro" (áreas de input, botões pressionados)
+@mixin border-beveled-in {
+  border-top: 2px solid $color-shadow-outer;
+  border-left: 2px solid $color-shadow-outer;
+  border-right: 2px solid $color-highlight-outer;
+  border-bottom: 2px solid $color-highlight-outer;
+  box-shadow: 
+    inset 1px 1px 0px $color-shadow-inner,
+    inset -1px -1px 0px $color-highlight-inner;
+}

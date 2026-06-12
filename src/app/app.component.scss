@@ -1,0 +1,286 @@
+@import "../styles.scss";
+
+.desktop {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+// Ícones
+.desktop-icons {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  cursor: pointer;
+  
+  img {
+    width: 32px; // Tamanho padrão de ícone Win95
+    height: 32px;
+    image-rendering: pixelated; // Essencial para o visual retro
+  }
+
+  span {
+    margin-top: 5px;
+    font-size: 11px;
+    color: #ffffff; // Texto branco no fundo teal
+    text-align: center;
+    // Pequena sombra para legibilidade
+    text-shadow: 1px 1px 1px #000000;
+  }
+}
+
+// Janela
+.window {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  position: absolute; // Para posicionamento livre
+  top: 100px;
+  left: 200px;
+  width: 500px;
+  
+  // Posicionamento Centralizado (Opcional)
+  // top: 50%;
+  // left: 50%;
+  // transform: translate(-50%, -50%);
+}
+
+.title-bar {
+  background-color: $color-title-bar-active;
+  color: $color-text-title;
+  padding: 3px 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: grab; // Indica que é arrastável
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 2px;
+  
+  button {
+    @include border-beveled-out;
+    background-color: $color-bg-window;
+    border-radius: 0;
+    width: 16px;
+    height: 14px;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    padding: 0;
+    line-height: 14px;
+    cursor: pointer;
+    color: #000000;
+
+    &:active {
+        @include border-beveled-in;
+        // Pequeno deslocamento no clique
+        padding: 1px 0 0 1px;
+    }
+  }
+}
+
+.window-body {
+    padding: 15px;
+}
+
+.explore-button-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+// Botão Estilo Win95
+.win95-button {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  border-radius: 0;
+  padding: 6px 20px;
+  font-size: 12px;
+  color: #000000;
+  cursor: pointer;
+
+  &:active {
+    @include border-beveled-in;
+    // Pequeno deslocamento no clique
+    padding: 7px 19px 5px 21px; 
+  }
+}
+
+// Barra de Tarefas
+.taskbar {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  z-index: 100; // Garante que fique sobre outras janelas
+}
+
+.start-button {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  height: 22px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  color: #000000;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:active {
+    @include border-beveled-in;
+  }
+}
+
+.taskbar-divider {
+    width: 2px;
+    height: 20px;
+    background-color: $color-shadow-inner;
+    border-right: 1px solid $color-highlight-outer;
+    margin: 0 10px;
+}
+
+.taskbar-tasks {
+    display: flex;
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.task-button {
+    @include border-beveled-out;
+    background-color: $color-bg-window;
+    height: 22px;
+    padding: 0 15px;
+    font-size: 11px;
+    color: #000000;
+    cursor: pointer;
+    border-radius: 0;
+
+    &.active {
+        @include border-beveled-in;
+        background-color: $color-highlight-inner; // Leve realce
+        font-weight: bold;
+    }
+}
+
+.system-tray {
+  @include border-beveled-in; // Chanfrado para dentro
+  background-color: $color-bg-window;
+  padding: 2px 10px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  margin-right: 5px;
+}
+
+
+// Estilo para quando a janela é maximizada
+.window.maximized {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: calc(100vh - 28px) !important; // Desconta a barra de tarefas
+  border: none;
+  box-shadow: none;
+}
+
+.title-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+// Menu Iniciar estilo clássico
+.start-menu {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  position: fixed;
+  bottom: 28px;
+  left: 2px;
+  width: 180px;
+  display: flex;
+  z-index: 999;
+}
+
+.start-menu-sidebar {
+  background: linear-gradient(to top, #000080, #1080d0);
+  width: 30px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  
+  span {
+    color: white;
+    transform: rotate(-90deg);
+    transform-origin: 0 0;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    margin-left: -15px;
+  }
+}
+
+.start-menu-items {
+  flex-grow: 1;
+  padding: 2px;
+  
+  hr {
+    border: none;
+    border-top: 1px solid #808080;
+    border-bottom: 1px solid #ffffff;
+    margin: 5px 0;
+  }
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background-color: #000080;
+    color: white;
+  }
+}
+
+// Ícones na barra de tarefas
+.task-button img {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
