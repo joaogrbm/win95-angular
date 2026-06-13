@@ -1,5 +1,6 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DragDropModule } from '@angular/cdk/drag-drop'; // 1. IMPORTAR AQUI
 
 export interface WindowItem {
   id: string;
@@ -14,7 +15,7 @@ export interface WindowItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,DragDropModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
@@ -36,7 +37,22 @@ export class AppComponent {
 
   // Computed Signal para listar apenas as janelas que aparecem na barra de tarefas (abertas)
   openWindows = computed(() => this.windows().filter(w => w.isOpen));
-  
+
+  // 2. NOVA FUNCIONALIDADE: Descobre o ID da janela ativa (maior zIndex visível)
+  activeWindowId = computed(() => {
+    // Filtra apenas as janelas que estão visíveis na tela no momento
+    const visibleWindows = this.windows().filter(w => w.isOpen && !w.isMinimized);
+    
+    if (visibleWindows.length === 0) return null;
+
+    // Reduz a lista para encontrar a janela com o maior zIndex
+    const active = visibleWindows.reduce((prev, current) => 
+      (prev.zIndex > current.zIndex) ? prev : current
+    );
+
+    return active.id;
+  });
+
   // Inicializa o relógio da barra de tarefas
   ngOnInit(): void {
     setInterval(() => {

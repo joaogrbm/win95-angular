@@ -7,13 +7,41 @@
   overflow: hidden;
 }
 
-// Ícones
 .desktop-icons {
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
   align-items: flex-start;
+
+  .icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80px;
+    cursor: pointer;
+    
+    // Alvo genérico para todos os ícones padrão (Computador, Lixeira)
+    img {
+      width: 32px;
+      height: 32px;
+      image-rendering: pixelated;
+    }
+
+    // FORÇA MÁXIMA: Garante o tamanho do Paint especificamente no Desktop
+    img.icon-paint {
+      width: 64px !important;
+      height: 64px !important;
+    }
+
+    span {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #ffffff;
+      text-align: center;
+      text-shadow: 1px 1px 1px #000000;
+    }
+  }
 }
 
 .icon-item {
@@ -52,19 +80,32 @@
   // top: 50%;
   // left: 50%;
   // transform: translate(-50%, -50%);
+
+
+  // Modifique o bloco da barra de título aqui dentro:
+  .title-bar {
+    background-color: $color-title-bar-inactive; // Padrão: Cinza Escuro para inativa
+    color: $color-highlight-inner; // Texto cinza claro/esbranquiçado se inativa
+    padding: 3px 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: grab;
+  }
+
+  // Quando a janela ganhar o foco/classe .active
+  &.active {
+    .title-bar {
+      background-color: $color-title-bar-active; // Azul Escuro clássico do Windows 95
+      color: $color-text-title; // Texto Branco Puro
+    }
+  }
 }
 
-.title-bar {
-  background-color: $color-title-bar-active;
-  color: $color-text-title;
-  padding: 3px 5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-  font-size: 12px;
-  cursor: grab; // Indica que é arrastável
-}
+
+
 
 .title-bar-controls {
   display: flex;
@@ -267,8 +308,15 @@
   cursor: pointer;
 
   img {
-    width: 20px;
-    height: 20px;
+    width: 32px; // Tamanho padrão dos outros ícones
+    height: 32px;
+    image-rendering: pixelated; // Mantém os pixels nítidos ao aumentar
+  }
+
+  // NOVA REGRA: Ajuste específico para o ícone do Paint
+  img.icon-paint {
+    width: 64px;  // Aumente para o tamanho que achar melhor (ex: 40px, 48px, 64px)
+    height: 64px;
   }
 
   &:hover {
@@ -283,4 +331,19 @@
   height: 14px;
   margin-right: 4px;
   vertical-align: middle;
+}
+
+.window.computer {
+  top: 60px;
+  left: 160px;
+}
+
+.window.trash {
+  top: 120px;
+  left: 240px;
+}
+
+.window.paint {
+  top: 180px;
+  left: 320px;
 }

@@ -10,7 +10,7 @@
       <span>Lixeira</span>
     </div>
     <div class="icon-item" (dblclick)="openWindow('paint')">
-      <img src="paint.png" alt="Paint">
+      <img src="paint.png" class="icon-paint" alt="Paint">
       <span>Paint Retro</span>
     </div>
   </div>
@@ -18,19 +18,24 @@
   @for (win of windows(); track win.id) {
     @if (win.isOpen && !win.isMinimized) {
       <div class="window" 
+           [class]="win.id"
            [class.maximized]="win.isMaximized"
+           [class.active]="win.id === activeWindowId()"
            [style.z-index]="win.zIndex"
-           (mousedown)="focusWindow(win.id)">
+           (mousedown)="focusWindow(win.id)"
+           cdkDrag>
         
-        <div class="title-bar" (dblclick)="maximizeWindow(win.id, $event)">
+        <div class="title-bar" 
+        cdkDragHandle
+        (dblclick)="maximizeWindow(win.id, $event)">
           <div class="title-bar-text">
             <img [src]="win.icon" class="title-icon" alt="">
             {{ win.title }}
           </div>
           <div class="title-bar-controls">
-            <button aria-label="Minimize" (click)="minimizeWindow(win.id, $event)">_</button>
-            <button aria-label="Maximize" (click)="maximizeWindow(win.id, $event)">🎒</button>
-            <button aria-label="Close" (click)="closeWindow(win.id, $event)">X</button>
+            <button aria-label="Minimize" (click)="minimizeWindow(win.id, $event)">➖</button>
+            <button aria-label="Maximize" (click)="maximizeWindow(win.id, $event)">🔲</button>
+            <button aria-label="Close" (click)="closeWindow(win.id, $event)">✖</button>
           </div>
         </div>
 
@@ -63,7 +68,7 @@
           <img src="my-computer.png" alt=""> <u>M</u>eu Computador
         </div>
         <div class="menu-item" (click)="openWindow('paint')">
-          <img src="paint.png" alt=""> <u>P</u>aint Retro
+          <img src="paint.png" class="icon-paint" alt=""> <u>P</u>aint
         </div>
         <hr>
         <div class="menu-item" style="color: gray;">
@@ -75,7 +80,7 @@
 
   <div class="taskbar" (click)="$event.stopPropagation()">
     <button class="start-button" [class.active]="isStartMenuOpen()" (click)="toggleStartMenu()">
-      <img src="windows-logo.png" alt="">
+      <img src="favicon.ico" alt="">
       Iniciar
     </button>
     
