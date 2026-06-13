@@ -29,10 +29,10 @@
     }
 
     // FORÇA MÁXIMA: Garante o tamanho do Paint especificamente no Desktop
-    img.icon-paint {
+    /*img.icon-paint {
       width: 64px !important;
       height: 64px !important;
-    }
+    }*/
 
     span {
       margin-top: 5px;
@@ -314,10 +314,10 @@
   }
 
   // NOVA REGRA: Ajuste específico para o ícone do Paint
-  img.icon-paint {
+  /*img.icon-paint {
     width: 64px;  // Aumente para o tamanho que achar melhor (ex: 40px, 48px, 64px)
     height: 64px;
-  }
+  }*/
 
   &:hover {
     background-color: #000080;
