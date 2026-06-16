@@ -347,3 +347,72 @@
   top: 180px;
   left: 320px;
 }
+
+.window.notepad {
+  top: 140px;
+  left: 280px;
+  width: 450px;
+}
+
+// Layout interno do Notepad
+.notepad-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notepad-menu {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid #808080;
+  padding-bottom: 5px;
+
+  button {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 5px;
+
+    &:hover {
+      background-color: #000080;
+      color: white;
+    }
+  }
+}
+
+.notepad-textarea {
+  @include border-beveled-in; // Chanfrado clássico para dentro
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Courier New', Courier, monospace; // Fonte típica de bloco de notas
+  font-size: 13px;
+  height: 200px;
+  resize: vertical;
+  padding: 5px;
+  outline: none;
+}
+
+// Botão de deletar arquivo no desktop
+.icon-item.text-file {
+  position: relative;
+  
+  &:hover .delete-file-btn {
+    display: block; // Só exibe o "X" de apagar quando passar o mouse perto
+  }
+}
+
+.delete-file-btn {
+  display: none;
+  position: absolute;
+  top: -5px;
+  right: 5px;
+  background: #e60000;
+  color: white;
+  border: 1px solid black;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 0 4px;
+  cursor: pointer;
+}

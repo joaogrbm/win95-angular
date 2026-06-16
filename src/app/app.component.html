@@ -13,9 +13,16 @@
       <img src="pbrush_1.ico" class="icon-paint" alt="Paint">
       <span>Paint Retro</span>
     </div>
+    @for (file of files(); track file.id) {
+      <div class="icon-item text-file" (dblclick)="openFile(file)">
+        <img src="notepad_2.ico" alt="Arquivo TXT">
+        <span>{{ file.name }}</span>
+        <button class="delete-file-btn" (click)="deleteFile(file.id, $event)">X</button>
+      </div>
+    }
   </div>
 
-  @for (win of windows(); track win.id) {
+ @for (win of windows(); track win.id) {
     @if (win.isOpen && !win.isMinimized) {
       <div class="window" 
            [class]="win.id"
@@ -25,12 +32,10 @@
            (mousedown)="focusWindow(win.id)"
            cdkDrag>
         
-        <div class="title-bar" 
-        cdkDragHandle
-        (dblclick)="maximizeWindow(win.id, $event)">
+        <div class="title-bar" cdkDragHandle (dblclick)="maximizeWindow(win.id, $event)">
           <div class="title-bar-text">
             <img [src]="win.icon" class="title-icon" alt="">
-            {{ win.title }}
+            {{ win.id === 'notepad' ? notepadFileName() + ' - ' + win.title : win.title }}
           </div>
           <div class="title-bar-controls">
             <button aria-label="Minimize" (click)="minimizeWindow(win.id, $event)">➖</button>
@@ -52,6 +57,20 @@
             <div class="paint-placeholder" style="background: white; height: 150px; border: 2px inset #808080;">
               <p style="padding: 10px; color: gray;">Área de desenho do Paint...</p>
             </div>
+          } 
+          
+          @else if (win.id === 'notepad') {
+            <div class="notepad-container">
+              <div class="notepad-menu">
+                <button (click)="newFile()">Novo</button>
+                <button (click)="saveFile()">Salvar</button>
+              </div>
+              <textarea 
+                [ngModel]="notepadTextArea()" 
+                (ngModelChange)="notepadTextArea.set($event)"
+                class="notepad-textarea">
+              </textarea>
+            </div>
           }
         </div>
       </div>
@@ -65,16 +84,46 @@
       </div>
       <div class="start-menu-items">
         <div class="menu-item" (click)="openWindow('computer')">
+          <img src="my-computer.png" alt=""> <u>M</u>eu Computador
+        </div>
+        <div class="menu-item" (click)="openWindow('paint')">
+          <img src="paint.png" class="icon-paint" alt=""> <u>P</u>aint Retro
+        </div>
+        <hr>
+        <div class="menu-item" style="color: gray;">
+          <img src="recycle-bin.png" alt=""> Desligar...
+        </div>
+      </div>
+    </div>
+  }
+  @if (isStartMenuOpen()) {
+    <div class="start-menu" (click)="$event.stopPropagation()">
+      <div class="start-menu-sidebar">
+        <span>Windows<b>95</b></span>
+      </div>
+      <div class="start-menu-items">
+        <div class="menu-item" (click)="openWindow('computer')">
           <img src="explorer_100.ico" alt=""> Meu Computador
         </div>
         <div class="menu-item" (click)="openWindow('paint')">
           <img src="pbrush_1.ico" class="icon-paint" alt=""> Paint
+        </div>
+         <div class="menu-item" (click)="newFile(); openWindow('notepad')">
+          <img src="notepad_2.ico" alt=""> Bloco de <u>N</u>otas
         </div>
         <hr>
         <div class="menu-item" style="color: gray;">
           <img src="shell32_32.ico" alt=""> Desligar...
         </div>
       </div>
+
+      @for (file of files(); track file.id) {
+      <div class="icon-item text-file" (dblclick)="openFile(file)">
+        <img src="notepad_2.ico" alt="Arquivo TXT">
+        <span>{{ file.name }}</span>
+        <button class="delete-file-btn" (click)="deleteFile(file.id, $event)">X</button>
+      </div>
+    }
     </div>
   }
 
