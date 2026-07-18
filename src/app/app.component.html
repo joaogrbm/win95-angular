@@ -32,6 +32,10 @@
       <img src="calc.ico" class="icon-paint" alt="calculator">
       <span>Calculator</span>
     </div>
+    <div class="icon-item" (dblclick)="openInternetExplorer()">
+      <img src="internet.ico" alt="Internet Explorer">
+      <span>Internet Explorer</span>
+    </div>
 
     @for (item of desktopItems(); track item.id) {
       <div class="icon-item item-virtual" (dblclick)="item.type === 'folder' ? openFolder(item) : openFile(item)">
@@ -114,6 +118,24 @@
                 </div>
               }
               
+            </div>
+          }
+
+          @else if (win.id === 'internet-explorer') {
+            <div class="browser-container">
+              <div class="browser-toolbar">
+                <button class="browser-btn" (click)="goBackBrowser()" [disabled]="browserHistoryIndex() <= 0">◀</button>
+                <button class="browser-btn" (click)="goForwardBrowser()" [disabled]="browserHistoryIndex() >= browserHistory().length - 1">▶</button>
+                <button class="browser-btn" (click)="reloadBrowser()">⟳</button>
+                <button class="browser-btn" (click)="goHomeBrowser()">Início</button>
+                <div class="browser-address-bar">
+                  <input type="text" [ngModel]="browserAddress()" (ngModelChange)="browserAddress.set($event)" placeholder="Digite um endereço" />
+                  <button class="browser-go" (click)="navigateBrowser()">Ir</button>
+                </div>
+              </div>
+              <div class="browser-view">
+                <iframe [src]="browserSafeSrc()" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" frameborder="0"></iframe>
+              </div>
             </div>
           }
 

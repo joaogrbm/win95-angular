@@ -1,4 +1,31 @@
-@import "../styles.scss";
+$color-bg-window: #c0c0c0;
+$color-title-bar-inactive: #808080;
+$color-highlight-inner: #dfdfdf;
+$color-title-bar-active: #000080;
+$color-text-title: #ffffff;
+$color-shadow-outer: #000000;
+$color-shadow-inner: #808080;
+$color-highlight-outer: #ffffff;
+
+@mixin border-beveled-out {
+  border-top: 2px solid $color-highlight-outer;
+  border-left: 2px solid $color-highlight-outer;
+  border-right: 2px solid $color-shadow-outer;
+  border-bottom: 2px solid $color-shadow-outer;
+  box-shadow:
+    inset 1px 1px 0px $color-highlight-inner,
+    inset -1px -1px 0px $color-shadow-inner;
+}
+
+@mixin border-beveled-in {
+  border-top: 2px solid $color-shadow-outer;
+  border-left: 2px solid $color-shadow-outer;
+  border-right: 2px solid $color-highlight-outer;
+  border-bottom: 2px solid $color-highlight-outer;
+  box-shadow:
+    inset 1px 1px 0px $color-shadow-inner,
+    inset -1px -1px 0px $color-highlight-inner;
+}
 
 .desktop {
   width: 100vw;
@@ -136,10 +163,68 @@
     padding: 15px;
 }
 
-.explore-button-container {
-    margin-top: 20px;
-    text-align: center;
+.browser-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+
+.browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.browser-btn {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 38px;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.browser-address-bar {
+  display: flex;
+  flex: 1;
+  min-width: 180px;
+  gap: 4px;
+}
+
+.browser-address-bar input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #999;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.browser-go {
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.browser-view {
+  height: calc(100vh - 260px);
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.browser-view iframe {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #999;
+}
+
 
 // Botão Estilo Win95
 .win95-button {

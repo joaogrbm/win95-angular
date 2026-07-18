@@ -1,6 +1,7 @@
 //import { Component, signal, computed } from '@angular/core';
 import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { DragDropModule } from '@angular/cdk/drag-drop'; // 1. IMPORTAR AQUI
 import { FormsModule } from '@angular/forms'; // ⚠️ IMPORTANTE: Adicione o FormsModule para usar o [(ngModel)] no textarea
 
@@ -33,6 +34,8 @@ export interface VirtualFile {
 })
 export class AppComponent {
 
+  constructor(private sanitizer: DomSanitizer) {}
+
   currentTime: Date = new Date();
   // Estado do Menu Iniciar
   isStartMenuOpen = signal<boolean>(false);
@@ -47,6 +50,7 @@ export class AppComponent {
     { id: 'paint', title: 'Untitled - Paint', icon: 'paint.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 }, // Adicionado Notepad
     { id: 'explorer', title: 'Explorador', icon: 'folder.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1, folderId: null },
+    { id: 'internet-explorer', title: 'Internet Explorer', icon: 'folder.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'calculator', title: 'Calculadora', icon: 'calculator.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1}
 
   ]);
@@ -72,6 +76,92 @@ export class AppComponent {
     const active = visibleWindows.reduce((prev, current) => (prev.zIndex > current.zIndex) ? prev : current);
     return active.id;
   });
+
+  browserAddress = signal<string>('https://www.example.com');
+  browserUrl = signal<string>('https://www.example.com');
+  browserHistory = signal<string[]>(['https://www.example.com']);
+  browserHistoryIndex = signal<number>(0);
+  browserReloadToken = signal<number>(0);
+  browserSrc = computed(() => this.buildBrowserSrc(this.browserUrl(), this.browserReloadToken()));
+  browserSafeSrc = computed<SafeResourceUrl>(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.browserSrc()));
+
+  private buildBrowserSrc(url: string, token: number): string {
+    try {
+      const parsed = new URL(url);
+      const separator = parsed.search ? '&' : '?';
+      return `${parsed.toString()}${separator}_=${token}`;
+    } catch {
+      return url;
+    }
+  }
+
+  private normalizeUrl(value: string): string {
+    let raw = value.trim();
+    if (!raw) {
+      return 'https://www.example.com';
+    }
+
+    if (!/^https?:\/\//i.test(raw)) {
+      raw = `https://${raw}`;
+    }
+
+    try {
+      return new URL(raw).toString();
+    } catch {
+      return raw;
+    }
+  }
+
+  private pushBrowserHistory(url: string) {
+    const currentIndex = this.browserHistoryIndex();
+    const currentHistory = this.browserHistory();
+    const normalized = this.normalizeUrl(url);
+
+    if (currentHistory[currentIndex] === normalized) {
+      return;
+    }
+
+    const nextHistory = currentHistory.slice(0, currentIndex + 1);
+    nextHistory.push(normalized);
+    this.browserHistory.set(nextHistory);
+    this.browserHistoryIndex.set(nextHistory.length - 1);
+  }
+
+  navigateBrowser(): void {
+    const url = this.normalizeUrl(this.browserAddress());
+    this.browserUrl.set(url);
+    this.browserAddress.set(url);
+    this.pushBrowserHistory(url);
+  }
+
+  goHomeBrowser(): void {
+    const homeUrl = 'https://www.example.com';
+    this.browserUrl.set(homeUrl);
+    this.browserAddress.set(homeUrl);
+    this.pushBrowserHistory(homeUrl);
+  }
+
+  goBackBrowser(): void {
+    if (this.browserHistoryIndex() <= 0) return;
+    const previousIndex = this.browserHistoryIndex() - 1;
+    const previousUrl = this.browserHistory()[previousIndex];
+    this.browserHistoryIndex.set(previousIndex);
+    this.browserUrl.set(previousUrl);
+    this.browserAddress.set(previousUrl);
+  }
+
+  goForwardBrowser(): void {
+    if (this.browserHistoryIndex() >= this.browserHistory().length - 1) return;
+    const nextIndex = this.browserHistoryIndex() + 1;
+    const nextUrl = this.browserHistory()[nextIndex];
+    this.browserHistoryIndex.set(nextIndex);
+    this.browserUrl.set(nextUrl);
+    this.browserAddress.set(nextUrl);
+  }
+
+  reloadBrowser(): void {
+    this.browserReloadToken.update(n => n + 1);
+  }
 
   ngOnInit(): void {
     setInterval(() => { this.currentTime = new Date(); }, 60000);
@@ -108,6 +198,12 @@ export class AppComponent {
   getItemsInFolder(folderId: string | null | undefined) {
     if (!folderId) return [];
     return this.files().filter(f => f.parentId === folderId);
+  }
+
+  // Navegar no internet explorer simples
+  openInternetExplorer() {
+    this.openWindow('internet-explorer');
+    this.browserAddress.set(this.browserUrl());
   }
 
   // Deletar arquivo ou pasta
