@@ -40,35 +40,6 @@ $color-highlight-outer: #ffffff;
   flex-direction: column;
   gap: 20px;
   align-items: flex-start;
-
-  .icon-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80px;
-    cursor: pointer;
-    
-    // Alvo genérico para todos os ícones padrão (Computador, Lixeira)
-    img {
-      width: 32px;
-      height: 32px;
-      image-rendering: pixelated;
-    }
-
-    // FORÇA MÁXIMA: Garante o tamanho do Paint especificamente no Desktop
-    /*img.icon-paint {
-      width: 64px !important;
-      height: 64px !important;
-    }*/
-
-    span {
-      margin-top: 5px;
-      font-size: 11px;
-      color: #ffffff;
-      text-align: center;
-      text-shadow: 1px 1px 1px #000000;
-    }
-  }
 }
 
 .icon-item {
@@ -77,42 +48,33 @@ $color-highlight-outer: #ffffff;
   align-items: center;
   width: 80px;
   cursor: pointer;
-  
+
   img {
-    width: 32px; // Tamanho padrão de ícone Win95
+    width: 32px;
     height: 32px;
-    image-rendering: pixelated; // Essencial para o visual retro
+    image-rendering: pixelated;
   }
 
   span {
     margin-top: 5px;
     font-size: 11px;
-    color: #ffffff; // Texto branco no fundo teal
+    color: #ffffff;
     text-align: center;
-    // Pequena sombra para legibilidade
     text-shadow: 1px 1px 1px #000000;
   }
 }
 
-// Janela
 .window {
   @include border-beveled-out;
   background-color: $color-bg-window;
-  position: absolute; // Para posicionamento livre
+  position: absolute;
   top: 100px;
   left: 200px;
   width: 500px;
-  
-  // Posicionamento Centralizado (Opcional)
-  // top: 50%;
-  // left: 50%;
-  // transform: translate(-50%, -50%);
 
-
-  // Modifique o bloco da barra de título aqui dentro:
   .title-bar {
-    background-color: $color-title-bar-inactive; // Padrão: Cinza Escuro para inativa
-    color: $color-highlight-inner; // Texto cinza claro/esbranquiçado se inativa
+    background-color: $color-title-bar-inactive;
+    color: $color-highlight-inner;
     padding: 3px 5px;
     display: flex;
     justify-content: space-between;
@@ -122,26 +84,21 @@ $color-highlight-outer: #ffffff;
     cursor: grab;
   }
 
-  // Quando a janela ganhar o foco/classe .active
   &.active {
     .title-bar {
-      background-color: $color-title-bar-active; // Azul Escuro clássico do Windows 95
-      color: $color-text-title; // Texto Branco Puro
+      background-color: $color-title-bar-active;
+      color: $color-text-title;
     }
   }
 }
 
-
-
-
 .title-bar-controls {
   display: flex;
   gap: 2px;
-  
+
   button {
     @include border-beveled-out;
     background-color: $color-bg-window;
-    border-radius: 0;
     width: 16px;
     height: 14px;
     font-family: Arial, sans-serif;
@@ -152,15 +109,14 @@ $color-highlight-outer: #ffffff;
     color: #000000;
 
     &:active {
-        @include border-beveled-in;
-        // Pequeno deslocamento no clique
-        padding: 1px 0 0 1px;
+      @include border-beveled-in;
+      padding: 1px 0 0 1px;
     }
   }
 }
 
 .window-body {
-    padding: 15px;
+  padding: 15px;
 }
 
 .browser-container {
@@ -225,8 +181,6 @@ $color-highlight-outer: #ffffff;
   border: 1px solid #999;
 }
 
-
-// Botão Estilo Win95
 .win95-button {
   @include border-beveled-out;
   background-color: $color-bg-window;
@@ -238,12 +192,10 @@ $color-highlight-outer: #ffffff;
 
   &:active {
     @include border-beveled-in;
-    // Pequeno deslocamento no clique
-    padding: 7px 19px 5px 21px; 
+    padding: 7px 19px 5px 21px;
   }
 }
 
-// Barra de Tarefas
 .taskbar {
   @include border-beveled-out;
   background-color: $color-bg-window;
@@ -255,7 +207,7 @@ $color-highlight-outer: #ffffff;
   display: flex;
   align-items: center;
   padding: 2px;
-  z-index: 100; // Garante que fique sobre outras janelas
+  z-index: 100;
 }
 
 .start-button {
@@ -282,38 +234,38 @@ $color-highlight-outer: #ffffff;
 }
 
 .taskbar-divider {
-    width: 2px;
-    height: 20px;
-    background-color: $color-shadow-inner;
-    border-right: 1px solid $color-highlight-outer;
-    margin: 0 10px;
+  width: 2px;
+  height: 20px;
+  background-color: $color-shadow-inner;
+  border-right: 1px solid $color-highlight-outer;
+  margin: 0 10px;
 }
 
 .taskbar-tasks {
-    display: flex;
-    gap: 5px;
-    flex-grow: 1;
+  display: flex;
+  gap: 5px;
+  flex-grow: 1;
 }
 
 .task-button {
-    @include border-beveled-out;
-    background-color: $color-bg-window;
-    height: 22px;
-    padding: 0 15px;
-    font-size: 11px;
-    color: #000000;
-    cursor: pointer;
-    border-radius: 0;
+  @include border-beveled-out;
+  background-color: $color-bg-window;
+  height: 22px;
+  padding: 0 15px;
+  font-size: 11px;
+  color: #000000;
+  cursor: pointer;
+  border-radius: 0;
 
-    &.active {
-        @include border-beveled-in;
-        background-color: $color-highlight-inner; // Leve realce
-        font-weight: bold;
-    }
+  &.active {
+    @include border-beveled-in;
+    background-color: $color-highlight-inner;
+    font-weight: bold;
+  }
 }
 
 .system-tray {
-  @include border-beveled-in; // Chanfrado para dentro
+  @include border-beveled-in;
   background-color: $color-bg-window;
   padding: 2px 10px;
   height: 20px;
@@ -323,13 +275,11 @@ $color-highlight-outer: #ffffff;
   margin-right: 5px;
 }
 
-
-// Estilo para quando a janela é maximizada
 .window.maximized {
   top: 0 !important;
   left: 0 !important;
   width: 100vw !important;
-  height: calc(100vh - 28px) !important; // Desconta a barra de tarefas
+  height: calc(100vh - 28px) !important;
   border: none;
   box-shadow: none;
 }
@@ -341,7 +291,6 @@ $color-highlight-outer: #ffffff;
   vertical-align: middle;
 }
 
-// Menu Iniciar estilo clássico
 .start-menu {
   @include border-beveled-out;
   background-color: $color-bg-window;
@@ -360,7 +309,7 @@ $color-highlight-outer: #ffffff;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 10px;
-  
+
   span {
     color: white;
     transform: rotate(-90deg);
@@ -375,7 +324,7 @@ $color-highlight-outer: #ffffff;
 .start-menu-items {
   flex-grow: 1;
   padding: 2px;
-  
+
   hr {
     border: none;
     border-top: 1px solid #808080;
@@ -393,292 +342,282 @@ $color-highlight-outer: #ffffff;
   cursor: pointer;
 
   img {
-    width: 32px; // Tamanho padrão dos outros ícones
+    width: 32px;
     height: 32px;
-    image-rendering: pixelated; // Mantém os pixels nítidos ao aumentar
-  }
-
-  // NOVA REGRA: Ajuste específico para o ícone do Paint
-  /*img.icon-paint {
-    width: 64px;  // Aumente para o tamanho que achar melhor (ex: 40px, 48px, 64px)
-    height: 64px;
-  }*/
-
-  &:hover {
-    background-color: #000080;
-    color: white;
+    image-rendering: pixelated;
   }
 }
 
-// Ícones na barra de tarefas
-.task-button img {
-  width: 14px;
-  height: 14px;
-  margin-right: 4px;
-  vertical-align: middle;
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: #c0c0c0;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  box-shadow: inset 1px 1px #dfdfdf;
+  min-width: 150px;
+  padding: 4px;
 }
 
-.window.computer {
-  top: 60px;
-  left: 160px;
-}
-
-.window.trash {
-  top: 120px;
-  left: 240px;
-}
-
-.window.paint {
-  top: 180px;
-  left: 320px;
-}
-
-.paint-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.paint-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.paint-canvas-wrap {
-  background: white;
-  border: 2px inset #808080;
-  padding: 6px;
-}
-
-.paint-canvas-wrap canvas {
-  display: block;
-  width: 100%;
-  max-width: 900px;
-  height: 320px;
-  touch-action: none; /* permite pointer events sem scroll */
-  background: #ffffff;
-}
-
-.window.notepad {
-  top: 140px;
-  left: 280px;
-  width: 450px;
-}
-
-// Layout interno do Notepad
-.notepad-container {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.notepad-menu {
-  display: flex;
-  gap: 10px;
-  border-bottom: 1px solid #808080;
-  padding-bottom: 5px;
-
-  button {
-    background: transparent;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 2px 5px;
-
-    &:hover {
-      background-color: #000080;
-      color: white;
-    }
-  }
-}
-
-.notepad-textarea {
-  @include border-beveled-in; // Chanfrado clássico para dentro
-  background-color: #ffffff;
-  color: #000000;
-  font-family: 'Courier New', Courier, monospace; // Fonte típica de bloco de notas
-  font-size: 13px;
-  height: 200px;
-  resize: vertical;
-  padding: 5px;
-  outline: none;
-}
-
-// Botão de deletar arquivo no desktop
-.icon-item.text-file {
-  position: relative;
-  
-  &:hover .delete-file-btn {
-    display: block; // Só exibe o "X" de apagar quando passar o mouse perto
-  }
-}
-
-.delete-file-btn {
-  display: none;
-  position: absolute;
-  top: -5px;
-  right: 5px;
-  background: #e60000;
-  color: white;
-  border: 1px solid black;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: bold;
-  padding: 0 4px;
+.context-menu-item {
+  padding: 4px 8px;
+  font-size: 12px;
   cursor: pointer;
 }
 
-/* src/app/app.component.scss */
-
-// Janela do Explorer
-.window.explorer {
-  top: 160px;
-  left: 200px;
-  width: 400px;
-  height: 280px;
+.notepad-container,
+.explorer-container,
+.calculator-container,
+.paint-window-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.explorer-container {
-  @include border-beveled-in;
-  background-color: #ffffff; // Fundo branco interno estilo Windows Explorer
-  height: 220px;
-  overflow-y: auto;
-  padding: 10px;
+.notepad-textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border-top: 2px solid #000;
+  border-left: 2px solid #000;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  box-sizing: border-box;
 }
 
 .explorer-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(70px, 1fr));
+  gap: 12px;
 }
 
 .explorer-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 70px;
+  gap: 6px;
+  font-size: 11px;
   cursor: pointer;
-  text-align: center;
-
-  img {
-    width: 32px;
-    height: 32px;
-    image-rendering: pixelated;
-  }
-
-  span {
-    font-size: 11px;
-    color: #000000; // Texto preto dentro das pastas
-    margin-top: 4px;
-    word-break: break-all;
-  }
 }
 
-.empty-folder-txt {
-  color: #808080;
-  font-size: 12px;
-  font-style: italic;
-}
-
-.create-btn {
-  margin-top: 10px;
-  padding: 3px 8px !important;
-  font-size: 11px !important;
-}
-
-.context-menu {
-  @include border-beveled-out; // Bordas 3D clássicas para fora
-  background-color: $color-bg-window; // O cinza padrão do seu projeto
-  position: fixed; // Garante o posicionamento absoluto na tela baseado no mouse
-  z-index: 9999; // Fica acima de absolutamente tudo (janelas, taskbar, etc)
-  width: 150px;
-  padding: 2px;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-
-  hr {
-    border: none;
-    border-top: 1px solid #808080;
-    border-bottom: 1px solid #ffffff;
-    margin: 4px 2px;
-  }
-}
-
-.context-menu-item {
-  padding: 4px 10px;
-  font-size: 12px;
-  color: #000000;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover:not(.disabled) {
-    background-color: #000080; // Azul escuro clássico de seleção do Windows
-    color: #ffffff; // Texto fica branco no hover
-  }
-}
-
-// Configuração da janela da calculadora
-.window.calculator {
-  top: 120px;
-  left: 350px;
-  width: 260px;
+.explorer-item img {
+  width: 32px;
+  height: 32px;
 }
 
 .calculator-container {
-  padding: 5px;
-  background-color: $color-bg-window; // Cinza padrão do sistema
+  width: 220px;
+}
 
-  // O display de texto afundado (Inverted Bevel)
-  .calculator-display {
-    @include border-beveled-in;
-    width: 100%;
-    height: 35px;
-    background-color: #ffffff;
-    color: #000000;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: right;
-    padding: 5px 8px;
-    margin-bottom: 12px;
-    box-sizing: border-box;
-    outline: none;
-  }
+.calculator-display {
+  border-top: 2px solid #000;
+  border-left: 2px solid #000;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  padding: 6px;
+  text-align: right;
+  margin-bottom: 8px;
+}
 
-  // Alinhamento das linhas de botões
-  .btn-group {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-    width: 100%;
+.btn-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
 
-    button {
-      @include border-beveled-out; // Botão saltado para fora
-      background-color: $color-bg-window;
-      flex: 1;
-      height: 32px;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #0000ff; // Números em azul escuro no padrão clássico
-      outline: none;
+.calculator-container button {
+  @include border-beveled-out;
+  background: $color-bg-window;
+  padding: 8px 0;
+  cursor: pointer;
+}
 
-      &:active {
-        @include border-beveled-in; // Simula o clique afundando
-        padding-top: 2px;
-        padding-left: 2px;
-      }
+.paint-window-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
 
-      // Estilo especial para os botões de operadores e funções (C, =, +, -, *, /)
-      &:nth-child(4), 
-      &:last-child {
-        color: #ff0000; // Operadores em Vermelho clássico
-      }
-    }
-  }
+.paint-menu-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 6px;
+}
+
+.paint-main-area {
+  display: flex;
+  min-height: 420px;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.paint-toolbox {
+  width: 170px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-right: 2px solid #808080;
+  padding-right: 8px;
+}
+
+.paint-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.paint-tool-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  background: #c0c0c0;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  box-shadow: inset 1px 1px 0 #d9d9d9, inset -1px -1px 0 #808080;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.paint-tool-button.active {
+  border-top: 2px solid #000;
+  border-left: 2px solid #000;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #d9d9d9;
+}
+
+.paint-tool-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.paint-tool-options label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.paint-tool-options input,
+.paint-tool-options select {
+  width: 72px;
+  border-top: 2px solid #000;
+  border-left: 2px solid #000;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  padding: 2px;
+}
+
+.paint-canvas-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: auto;
+  padding: 4px;
+  border: 2px solid #808080;
+  background: #c0c0c0;
+}
+
+.paint-canvas-wrapper {
+  max-width: 100%;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #c0c0c0 25%, transparent 25%),
+    linear-gradient(-45deg, #c0c0c0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c0c0c0 75%),
+    linear-gradient(-45deg, transparent 75%, #c0c0c0 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #808080;
+  border-top: 2px solid #000;
+  border-left: 2px solid #000;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+}
+
+.paint-canvas {
+  display: block;
+  image-rendering: pixelated;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.paint-colorbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 2px solid #808080;
+}
+
+.paint-color-indicators {
+  display: flex;
+  gap: 12px;
+}
+
+.paint-swatch-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.paint-swatch {
+  width: 26px;
+  height: 26px;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  background: #fff;
+}
+
+.paint-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 18px);
+  gap: 2px;
+}
+
+.paint-color-box {
+  width: 18px;
+  height: 18px;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  padding: 0;
+  cursor: pointer;
+}
+
+.paint-statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-height: 24px;
+  border-top: 2px solid #808080;
+  padding-top: 4px;
+  font-size: 11px;
+}
+
+.paint-statusbar span {
+  white-space: nowrap;
 }

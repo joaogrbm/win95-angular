@@ -1,4 +1,4 @@
- <div class="desktop" 
+<div class="desktop" 
      (click)="isStartMenuOpen.set(false); closeContextMenu()" 
      (contextmenu)="onRightClick($event)"> 
 
@@ -6,7 +6,8 @@
     <div class="context-menu" 
          [style.top.px]="contextMenu().y" 
          [style.left.px]="contextMenu().x"
-         (click)="$event.stopPropagation()"> <div class="context-menu-item" (click)="createFolder(); closeContextMenu()">
+         (click)="$event.stopPropagation()"> 
+      <div class="context-menu-item" (click)="createFolder(); closeContextMenu()">
         📂 Criar Nova Pasta
       </div>
       <hr>
@@ -14,7 +15,8 @@
         💻 Propriedades
       </div>
     </div>
-  }  
+  }
+
   <div class="desktop-icons">
     <div class="icon-item" (dblclick)="openWindow('computer')">
       <img src="my-computer.png" alt="Meu Computador">
@@ -55,11 +57,11 @@
            [style.z-index]="win.zIndex"
            (mousedown)="focusWindow(win.id)"
            cdkDrag>
-        
+
         <div class="title-bar" cdkDragHandle (dblclick)="maximizeWindow(win.id, $event)">
           <div class="title-bar-text">
             <img [src]="win.icon" class="title-icon" alt="">
-            {{ win.id === 'folder.ico' ? notepadFileName() + ' - ' + win.title : win.title }}
+            {{ win.title }}
           </div>
           <div class="title-bar-controls">
             <button aria-label="Minimize" (click)="minimizeWindow(win.id, $event)">➖</button>
@@ -75,24 +77,99 @@
           } @else if (win.id === 'trash') {
             <p>A lixeira está vazia.</p>
           } @else if (win.id === 'paint') {
-            <div class="paint-container">
-              <div class="paint-controls">
-                <label>Cor: <input type="color" [(ngModel)]="paintColor"></label>
-                <label>Tamanho: <input type="range" min="1" max="64" [(ngModel)]="brushSize"></label>
-                <button class="win95-button" (click)="clearCanvas()">Limpar</button>
-                <button class="win95-button" (click)="undo()">Desfazer</button>
+            <div class="paint-window-shell">
+              <div class="paint-menu-bar">
+                <button class="win95-button" (click)="paintNewDocument()">New</button>
+                <button class="win95-button" (click)="paintTriggerOpenDialog()">Open</button>
+                <button class="win95-button" (click)="paintSaveFile()">Save</button>
+                <button class="win95-button" (click)="paintExportPng()">Export PNG</button>
+                <button class="win95-button" (click)="paintUndo()">Undo</button>
+                <button class="win95-button" (click)="paintRedo()">Redo</button>
+                <button class="win95-button" (click)="paintCutSelection()">Cut</button>
+                <button class="win95-button" (click)="paintCopySelection()">Copy</button>
+                <button class="win95-button" (click)="paintPasteSelection()">Paste</button>
+                <button class="win95-button" (click)="paintDeleteSelection()">Delete</button>
               </div>
-              <div class="paint-canvas-wrap">
-                <canvas #paintCanvas
-                        (pointerdown)="pointerDown($event, paintCanvas)"
-                        (pointermove)="pointerMove($event, paintCanvas)"
-                        (pointerup)="pointerUp($event)"
-                        (pointerleave)="pointerUp($event)"></canvas>
+
+              <div class="paint-main-area">
+                <aside class="paint-toolbox" *ngIf="paintShowToolbox()">
+                  <div class="paint-tool-grid">
+                    <button
+                      *ngFor="let item of paintTools"
+                      type="button"
+                      class="paint-tool-button"
+                      [class.active]="paintTool() === item.id"
+                      [title]="item.label"
+                      (click)="selectPaintTool(item.id)"
+                    >
+                      <span>{{ item.icon }}</span>
+                    </button>
+                  </div>
+
+                  <div class="paint-tool-options">
+                    <label>
+                      Width
+                      <input type="number" min="1" max="32" [ngModel]="strokeWidth()" (ngModelChange)="strokeWidth.set($event)" />
+                    </label>
+                    <label>
+                      Fill
+                      <select [ngModel]="fillStyle()" (ngModelChange)="fillStyle.set($event)">
+                        <option *ngFor="let mode of paintFillModes" [ngValue]="mode.value">{{ mode.label }}</option>
+                      </select>
+                    </label>
+                  </div>
+                </aside>
+
+                <div class="paint-canvas-panel">
+                  <div class="paint-canvas-wrapper" [style.width.px]="paintDocumentWidth() * paintZoom()" [style.height.px]="paintDocumentHeight() * paintZoom()">
+                    <canvas
+                      #paintCanvas
+                      class="paint-canvas"
+                      (pointerdown)="paintPointerDown($event)"
+                      (pointermove)="paintPointerMove($event)"
+                      (pointerup)="paintPointerUp($event)"
+                      (pointerleave)="paintPointerUp($event)"
+                      (contextmenu)="paintOnContextMenu($event)"
+                    ></canvas>
+                  </div>
+                </div>
               </div>
+
+              <div class="paint-colorbar" *ngIf="paintShowPalette()">
+                <div class="paint-color-indicators">
+                  <div class="paint-swatch-panel">
+                    <span>Primary</span>
+                    <div class="paint-swatch" [style.background]="primaryColor()"></div>
+                  </div>
+                  <div class="paint-swatch-panel">
+                    <span>Secondary</span>
+                    <div class="paint-swatch" [style.background]="secondaryColor()"></div>
+                  </div>
+                </div>
+
+                <div class="paint-palette-grid">
+                  <button
+                    *ngFor="let color of paintPalette"
+                    type="button"
+                    class="paint-color-box"
+                    [style.background]="color"
+                    [attr.aria-label]="'Color ' + color"
+                    (click)="setPaintPaletteColor(color, 0)"
+                    (contextmenu)="setPaintPaletteColor(color, 2); $event.preventDefault()"
+                  ></button>
+                </div>
+              </div>
+
+              <div class="paint-statusbar" *ngIf="paintShowStatus()">
+                <span>{{ paintStatusText() }}</span>
+                <span>Mouse: {{ paintPointer().x }}, {{ paintPointer().y }}</span>
+                <span>{{ paintSelectionText() || 'No selection' }}</span>
+                <span>Zoom: {{ paintZoom() }}x</span>
+              </div>
+
+              <input #paintFileInput type="file" hidden accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" (change)="paintOnFileSelected($event)" />
             </div>
-          } 
-          
-          @else if (win.id === 'notepad') {
+          } @else if (win.id === 'notepad') {
             <div class="notepad-container">
               <div class="notepad-menu">
                 <button (click)="newFile()">Novo</button>
@@ -100,11 +177,8 @@
               </div>
               <textarea [ngModel]="notepadTextArea()" (ngModelChange)="notepadTextArea.set($event)" class="notepad-textarea"></textarea>
             </div>
-          }
-
-          @else if (win.id === 'explorer') {
+          } @else if (win.id === 'explorer') {
             <div class="explorer-container">
-              
               @if (getItemsInFolder(win.folderId).length === 0) {
                 <p class="empty-folder-txt">Esta pasta está vazia.</p>
               } @else {
@@ -117,11 +191,8 @@
                   }
                 </div>
               }
-              
             </div>
-          }
-
-          @else if (win.id === 'internet-explorer') {
+          } @else if (win.id === 'internet-explorer') {
             <div class="browser-container">
               <div class="browser-toolbar">
                 <button class="browser-btn" (click)="goBackBrowser()" [disabled]="browserHistoryIndex() <= 0">◀</button>
@@ -137,39 +208,37 @@
                 <iframe [src]="browserSafeSrc()" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" frameborder="0"></iframe>
               </div>
             </div>
-          }
-
-          @else if (win.id === 'calculator') {
+          } @else if (win.id === 'calculator') {
             <div class="calculator-container"> 
               <input type="text" class="calculator-display" [value]="display()" readonly>
 
               <div class="btn-group d-flex mb-2" role="group">
-                        <button (click)="appendInput('7')">7</button>
-                        <button (click)="appendInput('8')">8</button>
-                        <button (click)="appendInput('9')">9</button>
-                        <button (click)="appendInput('*')">*</button>
-                    </div>
-                    <div class="btn-group d-flex mb-2" role="group">
-                        <button (click)="appendInput('4')">4</button>
-                        <button (click)="appendInput('5')">5</button>
-                        <button (click)="appendInput('6')">6</button>
-                        <button (click)="appendInput('-')">-</button>
-                    </div>
-                    <div class="btn-group d-flex mb-2" role="group">
-                        <button (click)="appendInput('1')">1</button>
-                        <button (click)="appendInput('2')">2</button>
-                        <button (click)="appendInput('3')">3</button>
-                        <button (click)="appendInput('+')">+</button>
-                    </div>
-                    <div class="btn-group d-flex mb-2" role="group">
-                        <button (click)="appendInput('0')">0</button>
-                        <button (click)="appendInput('.')">.</button>
-                        <button (click)="appendInput('/')">/</button>
-                        <button (click)="clear()">C</button>
-                    </div>
-                    <div class="btn-group d-flex mb-2" role="group">
-                        <button (click)="calculate()" style="color: #ff0000;">=</button>
-                    </div>
+                <button (click)="appendInput('7')">7</button>
+                <button (click)="appendInput('8')">8</button>
+                <button (click)="appendInput('9')">9</button>
+                <button (click)="appendInput('*')">*</button>
+              </div>
+              <div class="btn-group d-flex mb-2" role="group">
+                <button (click)="appendInput('4')">4</button>
+                <button (click)="appendInput('5')">5</button>
+                <button (click)="appendInput('6')">6</button>
+                <button (click)="appendInput('-')">-</button>
+              </div>
+              <div class="btn-group d-flex mb-2" role="group">
+                <button (click)="appendInput('1')">1</button>
+                <button (click)="appendInput('2')">2</button>
+                <button (click)="appendInput('3')">3</button>
+                <button (click)="appendInput('+')">+</button>
+              </div>
+              <div class="btn-group d-flex mb-2" role="group">
+                <button (click)="appendInput('0')">0</button>
+                <button (click)="appendInput('.')">.</button>
+                <button (click)="appendInput('/')">/</button>
+                <button (click)="clear()">C</button>
+              </div>
+              <div class="btn-group d-flex mb-2" role="group">
+                <button (click)="calculate()" style="color: #ff0000;">=</button>
+              </div>
             </div>
           }
         </div>
@@ -183,7 +252,7 @@
       <div class="start-menu-items">
         <div class="menu-item" (click)="openWindow('computer')"><img src="my-computer.png" alt=""> <u>M</u>eu Computador</div>
         <div class="menu-item" (click)="openWindow('paint')"><img src="pbrush_1.ico" class="icon-paint" alt=""> <u>P</u>aint</div>
-        <div class="menu-item" (click)="openWindow('calculator')"><img src="calc.ico" class="icon-paint" alt=""> <u>P</u>aint</div>
+        <div class="menu-item" (click)="openWindow('calculator')"><img src="calc.ico" class="icon-paint" alt=""> <u>C</u>alculadora</div>
         <div class="menu-item" (click)="newFile(); openWindow('notepad')"><img src="notepad_2.ico" alt=""> Bloco de Notas</div>
         <hr>
         <div class="menu-item" style="color: gray;"><img src="recycle-bin.png" alt=""> Desligar...</div>
@@ -205,5 +274,4 @@
     </div>
     <div class="system-tray"><span class="time">{{ currentTime | date:'hh:mm a' }}</span></div>
   </div>
-
 </div>
