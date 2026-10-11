@@ -421,9 +421,12 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     }
 
     if (tool === 'magnifier') {
-      const nextZoom = clamp(this.paintZoom() + 0.5, 0.5, 6);
+      // botão esquerdo aproxima, direito afasta
+      const step = button === 2 ? -0.5 : 0.5;
+      const nextZoom = clamp(this.paintZoom() + step, 0.5, 6);
       this.paintZoom.set(nextZoom);
       this.paintRender();
+      this.paintFitToPanel();
       this.paintStatusText.set(`Zoom ${nextZoom.toFixed(1)}x`);
       return;
     }
@@ -556,7 +559,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       eraser: 'Erase pixels and restore transparency.',
       fill: 'Click any enclosed area to fill it.',
       picker: 'Pick a color from the canvas.',
-      magnifier: 'Click to zoom in and inspect pixels.',
+      magnifier: 'Left click to zoom in, right click to zoom out.',
       pencil: 'Use the pencil to draw with a one-pixel stroke.',
       brush: 'Use the brush to paint with a rounded tip.',
       airbrush: 'Spray random points around the cursor.',
