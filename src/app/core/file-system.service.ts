@@ -1,6 +1,9 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { VirtualFile } from './models';
 
+export const DESKTOP_ID = 'desktop';
+export const TRASH_ID = 'trash';
+
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
   readonly files = signal<VirtualFile[]>([
@@ -9,7 +12,8 @@ export class FileSystemService {
     { id: 'txt-interno', name: 'Segredo.txt', type: 'file', content: 'Você achou este arquivo dentro da pasta!', parentId: 'fold-1' }
   ]);
 
-  readonly desktopItems = computed(() => this.files().filter(f => f.parentId === 'desktop'));
+  readonly desktopItems = computed(() => this.files().filter(f => f.parentId === DESKTOP_ID));
+  readonly trashItems = computed(() => this.files().filter(f => f.parentId === TRASH_ID));
 
   getItemsInFolder(folderId: string | null | undefined): VirtualFile[] {
     if (!folderId) return [];
@@ -46,22 +50,70 @@ export class FileSystemService {
     this.files.update(all => all.map(f => f.id === id ? { ...f, content } : f));
   }
 
-  // Exclui o item e, se for uma pasta, tudo dentro dela (inclusive subpastas).
-  // Retorna os ids excluídos.
-  deleteItem(id: string): Set<string> {
-    const deleted = new Set([id]);
+  // O item e, se for uma pasta, tudo dentro dela (inclusive subpastas).
+  private withDescendants(id: string): Set<string> {
+    const ids = new Set([id]);
     let found = true;
     while (found) {
       found = false;
       for (const file of this.files()) {
-        if (!deleted.has(file.id) && deleted.has(file.parentId)) {
-          deleted.add(file.id);
+        if (!ids.has(file.id) && ids.has(file.parentId)) {
+          ids.add(file.id);
           found = true;
         }
       }
     }
+    return ids;
+  }
 
+  // true se o item está acessível a partir da área de trabalho (não está na Lixeira)
+  isReachable(id: string): boolean {
+    let current = this.files().find(f => f.id === id);
+    while (current) {
+      if (current.parentId === DESKTOP_ID) return true;
+      if (current.parentId === TRASH_ID) return false;
+      current = this.files().find(f => f.id === current!.parentId);
+    }
+    return id === DESKTOP_ID;
+  }
+
+  // Manda o item para a Lixeira. O conteúdo de uma pasta vai junto, dentro dela.
+  // Retorna os ids que deixaram de estar acessíveis.
+  moveToTrash(id: string): Set<string> {
+    const affected = this.withDescendants(id);
+    this.files.update(all => all.map(f => f.id === id
+      ? { ...f, parentId: TRASH_ID, originalParentId: f.parentId, deletedAt: new Date() }
+      : f));
+    return affected;
+  }
+
+  // Devolve o item para onde estava. Se a pasta original não existe mais
+  // (ou também está na Lixeira), ele volta para a área de trabalho.
+  restore(id: string) {
+    const item = this.files().find(f => f.id === id);
+    if (!item || item.parentId !== TRASH_ID) return;
+
+    const target = item.originalParentId && this.isReachable(item.originalParentId) ? item.originalParentId : DESKTOP_ID;
+    this.files.update(all => all.map(f => f.id === id
+      ? { ...f, parentId: target, originalParentId: undefined, deletedAt: undefined }
+      : f));
+  }
+
+  // Exclui permanentemente o item e tudo dentro dele. Retorna os ids excluídos.
+  deleteItem(id: string): Set<string> {
+    const deleted = this.withDescendants(id);
     this.files.update(all => all.filter(f => !deleted.has(f.id)));
     return deleted;
+  }
+
+  emptyTrash() {
+    for (const item of this.trashItems()) {
+      this.deleteItem(item.id);
+    }
+  }
+
+  getName(id: string | undefined): string {
+    if (!id || id === DESKTOP_ID) return 'Área de Trabalho';
+    return this.files().find(f => f.id === id)?.name ?? 'Área de Trabalho';
   }
 }

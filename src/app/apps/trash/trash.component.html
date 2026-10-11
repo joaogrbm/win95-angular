@@ -1,0 +1,34 @@
+<div class="trash">
+  <div class="trash-toolbar">
+    <button (click)="restore()" [disabled]="!selected()">Restaurar</button>
+    <button (click)="deleteSelected()" [disabled]="!selected()">Excluir</button>
+    <button (click)="emptyTrash()" [disabled]="items().length === 0">Esvaziar Lixeira</button>
+  </div>
+
+  <div class="trash-list">
+    @if (items().length === 0) {
+      <p class="trash-empty">A Lixeira está vazia.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Local original</th>
+            <th>Data de exclusão</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr [class.selected]="selectedId() === item.id" (click)="selectedId.set(item.id)">
+              <td><img [src]="icon(item)" alt=""> {{ item.name }}</td>
+              <td>{{ fileSystem.getName(item.originalParentId) }}</td>
+              <td>{{ item.deletedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div class="trash-status">{{ items().length }} objeto(s)</div>
+</div>

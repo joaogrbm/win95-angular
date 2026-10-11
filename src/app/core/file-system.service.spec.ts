@@ -25,6 +25,31 @@ describe('FileSystemService', () => {
     expect(service.files().some(f => f.id === sub.id || f.id === nested.id)).toBeFalse();
   });
 
+  it('moves a folder to the trash with its content and restores it', () => {
+    service.moveToTrash('fold-1');
+    expect(service.desktopItems().some(f => f.id === 'fold-1')).toBeFalse();
+    expect(service.trashItems().map(f => f.id)).toEqual(['fold-1']);
+    expect(service.getItemsInFolder('fold-1').length).toBe(1);
+
+    service.restore('fold-1');
+    expect(service.trashItems().length).toBe(0);
+    expect(service.desktopItems().some(f => f.id === 'fold-1')).toBeTrue();
+  });
+
+  it('restores to the desktop when the original folder is gone', () => {
+    service.moveToTrash('txt-interno');
+    service.deleteItem('fold-1');
+    service.restore('txt-interno');
+    expect(service.files().find(f => f.id === 'txt-interno')?.parentId).toBe('desktop');
+  });
+
+  it('empties the trash permanently', () => {
+    service.moveToTrash('fold-1');
+    service.moveToTrash('txt-1');
+    service.emptyTrash();
+    expect(service.files().length).toBe(0);
+  });
+
   it('updates file content', () => {
     service.updateContent('txt-1', 'novo texto');
     expect(service.files().find(f => f.id === 'txt-1')?.content).toBe('novo texto');

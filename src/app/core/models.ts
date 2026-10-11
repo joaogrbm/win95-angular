@@ -7,6 +7,9 @@ export interface WindowItem {
   isMaximized: boolean;
   zIndex: number;
   width?: number;
+  // posição na área de trabalho, definida ao abrir (em cascata) e ao arrastar
+  x?: number;
+  y?: number;
   folderId?: string | null;
 }
 
@@ -16,5 +19,8 @@ export interface VirtualFile {
   type: 'file' | 'folder';
   content?: string;
   children?: string[];
-  parentId: 'desktop' | string;
+  parentId: 'desktop' | 'trash' | string;
+  // preenchidos quando o item está na Lixeira
+  originalParentId?: string;
+  deletedAt?: Date;
 }

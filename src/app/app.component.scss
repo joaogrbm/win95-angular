@@ -55,8 +55,8 @@
   @include border-beveled-out;
   background-color: $color-bg-window;
   position: absolute;
-  top: 100px;
-  left: 200px;
+  top: 0;
+  left: 0;
   width: 500px;
   display: flex;
   flex-direction: column;

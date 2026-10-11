@@ -66,7 +66,10 @@
            [class.active]="win.id === windowManager.activeWindowId()"
            [ngStyle]="getWindowStyle(win)"
            (mousedown)="windowManager.focusWindow(win.id)"
-           cdkDrag>
+           cdkDrag
+           [cdkDragDisabled]="win.isMaximized"
+           [cdkDragFreeDragPosition]="win.isMaximized ? { x: 0, y: 0 } : { x: win.x ?? 0, y: win.y ?? 0 }"
+           (cdkDragEnded)="windowManager.moveWindow(win.id, $event.source.getFreeDragPosition())">
 
         <div class="title-bar" cdkDragHandle (dblclick)="maximizeWindow(win.id, $event)">
           <div class="title-bar-text">
@@ -87,7 +90,7 @@
               <p>Memória RAM detectada: 640 KB.</p>
             }
             @case ('trash') {
-              <p>A lixeira está vazia.</p>
+              <app-trash />
             }
             @case ('paint') {
               <app-paint />

@@ -1,6 +1,11 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { WindowItem } from './models';
 
+// janelas novas abrem em cascata a partir deste ponto
+const CASCADE_START = { x: 200, y: 60 };
+const CASCADE_STEP = 30;
+const CASCADE_SLOTS = 10;
+
 @Injectable({ providedIn: 'root' })
 export class WindowManagerService {
   private topZIndex = 10;
@@ -8,7 +13,7 @@ export class WindowManagerService {
   private closeGuards = new Map<string, () => boolean | Promise<boolean>>();
 
   readonly windows = signal<WindowItem[]>([
-    { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1 },
+    { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1, ...CASCADE_START },
     { id: 'trash', title: 'Lixeira', icon: 'recycle-bin.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'paint', title: 'untitled - Paint', icon: 'pbrush_1.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad_2.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
@@ -31,7 +36,25 @@ export class WindowManagerService {
   }
 
   openWindow(id: string, changes: Partial<WindowItem> = {}) {
-    this.updateWindow(id, w => ({ ...w, ...changes, isOpen: true, isMinimized: false, zIndex: ++this.topZIndex }));
+    // uma janela que já está aberta mantém a posição; uma nova vai para a próxima vaga da cascata
+    const position = this.getWindow(id)?.isOpen ? {} : this.nextCascadePosition();
+    this.updateWindow(id, w => ({ ...w, ...position, ...changes, isOpen: true, isMinimized: false, zIndex: ++this.topZIndex }));
+  }
+
+  moveWindow(id: string, position: { x: number; y: number }) {
+    this.updateWindow(id, w => ({ ...w, x: position.x, y: position.y }));
+  }
+
+  private nextCascadePosition(): { x: number; y: number } {
+    const taken = new Set(this.openWindows().map(w => `${w.x},${w.y}`));
+    for (let slot = 0; slot < CASCADE_SLOTS; slot++) {
+      const x = CASCADE_START.x + slot * CASCADE_STEP;
+      const y = CASCADE_START.y + slot * CASCADE_STEP;
+      if (!taken.has(`${x},${y}`)) {
+        return { x, y };
+      }
+    }
+    return { ...CASCADE_START };
   }
 
   focusWindow(id: string) {

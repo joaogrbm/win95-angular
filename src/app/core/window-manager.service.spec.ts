@@ -21,6 +21,19 @@ describe('WindowManagerService', () => {
     expect(service.activeWindowId()).toBe('computer');
   });
 
+  it('cascades new windows and keeps the position of an already open one', () => {
+    service.openWindow('paint');
+    service.openWindow('trash');
+    const paint = service.getWindow('paint')!;
+    const trash = service.getWindow('trash')!;
+    expect(trash.x).toBe(paint.x! + 30);
+    expect(trash.y).toBe(paint.y! + 30);
+
+    service.moveWindow('paint', { x: 500, y: 400 });
+    service.openWindow('paint');
+    expect(service.getWindow('paint')?.x).toBe(500);
+  });
+
   it('closes a window', () => {
     service.closeWindow('computer');
     expect(service.openWindows().length).toBe(0);

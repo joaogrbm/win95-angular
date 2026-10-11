@@ -1,0 +1,92 @@
+@use '../../styles/win95' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  outline: none;
+}
+
+.trash {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  font-size: 11px;
+}
+
+.trash-toolbar {
+  display: flex;
+  gap: 4px;
+
+  button {
+    @include border-beveled-out;
+    background: $color-bg-window;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+
+    &:active:not(:disabled) {
+      @include border-beveled-in;
+    }
+
+    &:disabled {
+      color: $color-shadow-inner;
+      text-shadow: 1px 1px 0 $color-highlight-outer;
+      cursor: default;
+    }
+  }
+}
+
+.trash-list {
+  @include border-beveled-in;
+  background: #fff;
+  flex: 1 1 auto;
+  min-height: 160px;
+  overflow: auto;
+}
+
+.trash-empty {
+  margin: 12px;
+  color: $color-shadow-inner;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  @include border-beveled-out;
+  background: $color-bg-window;
+  font-weight: normal;
+  text-align: left;
+  padding: 2px 6px;
+  position: sticky;
+  top: 0;
+}
+
+td {
+  padding: 2px 6px;
+  white-space: nowrap;
+  cursor: default;
+
+  img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}
+
+tr.selected td {
+  background: $color-title-bar-active;
+  color: $color-text-title;
+}
+
+.trash-status {
+  @include border-beveled-in;
+  padding: 2px 6px;
+}

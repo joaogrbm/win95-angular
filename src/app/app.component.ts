@@ -12,6 +12,7 @@ import { ExplorerComponent } from './apps/explorer/explorer.component';
 import { NotepadComponent } from './apps/notepad/notepad.component';
 import { NotepadService } from './apps/notepad/notepad.service';
 import { PaintComponent } from './apps/paint/paint.component';
+import { TrashComponent } from './apps/trash/trash.component';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ import { PaintComponent } from './apps/paint/paint.component';
     ExplorerComponent,
     NotepadComponent,
     PaintComponent,
+    TrashComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
@@ -80,29 +82,32 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.delete', ['$event'])
+  @HostListener('document:keydown.shift.delete', ['$event'])
   onDeleteKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select') || this.dialog.current()) return;
 
     const item = this.fileSystem.files().find(f => f.id === this.selectedIconId());
     if (item) {
-      this.confirmDelete(item);
+      // Shift+Delete exclui sem passar pela Lixeira, como no Windows
+      this.confirmDelete(item, event.shiftKey);
     }
   }
 
-  async confirmDelete(item: VirtualFile) {
+  async confirmDelete(item: VirtualFile, permanent = false) {
     const isFolder = item.type === 'folder';
+    const what = isFolder ? `a pasta '${item.name}' e todo o seu conteúdo` : `'${item.name}'`;
     const answer = await this.dialog.ask({
       title: isFolder ? 'Confirmar exclusão de pasta' : 'Confirmar exclusão de arquivo',
       icon: 'question',
-      message: isFolder
-        ? `Tem certeza de que deseja excluir a pasta '${item.name}' e todo o seu conteúdo?`
-        : `Tem certeza de que deseja excluir '${item.name}'?`,
+      message: permanent
+        ? `Tem certeza de que deseja excluir ${what} permanentemente?`
+        : `Tem certeza de que deseja enviar ${what} para a Lixeira?`,
       buttons: ['Sim', 'Não'],
     });
     if (answer !== 'Sim') return;
 
-    const deleted = this.fileSystem.deleteItem(item.id);
+    const deleted = permanent ? this.fileSystem.deleteItem(item.id) : this.fileSystem.moveToTrash(item.id);
     this.selectedIconId.set(null);
 
     const notepadFileId = this.notepad.activeFileId();
@@ -129,11 +134,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isStartMenuOpen.update(v => !v);
   }
 
+  // a posição vem do cdkDragFreeDragPosition; aqui só tamanho e empilhamento
   getWindowStyle(win: WindowItem): Record<string, string | number> {
     if (win.isMaximized) {
       return {
-        top: '0px',
-        left: '0px',
         width: '100vw',
         height: 'calc(100vh - 28px)',
         zIndex: win.zIndex,
@@ -141,8 +145,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     return {
-      top: '100px',
-      left: '200px',
       width: `${win.width ?? 500}px`,
       height: 'auto',
       zIndex: win.zIndex,
