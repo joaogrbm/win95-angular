@@ -5,6 +5,8 @@ import { VirtualFile, WindowItem } from './core/models';
 import { DialogComponent } from './core/dialog/dialog.component';
 import { DialogService } from './core/dialog/dialog.service';
 import { FileSystemService } from './core/file-system.service';
+import { ShellService } from './core/shell.service';
+import { PaintFilesService } from './apps/paint/paint-files.service';
 import { WindowManagerService } from './core/window-manager.service';
 import { BrowserComponent } from './apps/browser/browser.component';
 import { CalculatorComponent } from './apps/calculator/calculator.component';
@@ -38,6 +40,8 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly fileSystem = inject(FileSystemService);
   readonly notepad = inject(NotepadService);
   private dialog = inject(DialogService);
+  readonly shell = inject(ShellService);
+  private paintFiles = inject(PaintFilesService);
 
   private clockTimer?: ReturnType<typeof setInterval>;
   currentTime: Date = new Date();
@@ -61,11 +65,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   openItem(item: VirtualFile) {
-    if (item.type === 'folder') {
-      this.windowManager.openWindow('explorer', { title: item.name, folderId: item.id });
-    } else {
-      this.notepad.openFile(item);
-    }
+    this.shell.open(item);
   }
 
   selectIcon(id: string, event: Event) {
@@ -115,6 +115,11 @@ export class AppComponent implements OnInit, OnDestroy {
     const notepadFileId = this.notepad.activeFileId();
     if (notepadFileId && deleted.has(notepadFileId)) {
       this.notepad.newFile();
+    }
+    // o desenho continua aberto no Paint, mas o próximo Save cria um arquivo novo
+    const paintFileId = this.paintFiles.currentFileId();
+    if (paintFileId && deleted.has(paintFileId)) {
+      this.paintFiles.currentFileId.set(null);
     }
     const explorer = this.windowManager.getWindow('explorer');
     if (explorer?.isOpen && explorer.folderId && deleted.has(explorer.folderId)) {

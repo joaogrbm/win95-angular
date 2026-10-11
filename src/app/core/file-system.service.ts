@@ -1,4 +1,5 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DialogService } from './dialog/dialog.service';
 import { VirtualFile } from './models';
 
 export const DESKTOP_ID = 'desktop';
@@ -26,7 +27,9 @@ function loadFiles(): VirtualFile[] {
 
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
+  private dialog = inject(DialogService);
   readonly files = signal<VirtualFile[]>(loadFiles());
+  private warnedDiskFull = false;
 
   constructor() {
     // grava a cada mudança, para os arquivos sobreviverem ao recarregar a página
@@ -34,8 +37,19 @@ export class FileSystemService {
       const files = this.files();
       try {
         localStorage.setItem(FILES_STORAGE_KEY, JSON.stringify(files));
-      } catch {
-        // sem espaço ou localStorage bloqueado: segue só em memória
+        this.warnedDiskFull = false;
+      } catch (error) {
+        // sem espaço (o navegador dá uns 5 MB): avisa uma vez em vez de perder dados em silêncio.
+        // Com o localStorage bloqueado, segue só em memória sem avisar.
+        if (error instanceof DOMException && error.name === 'QuotaExceededError' && !this.warnedDiskFull) {
+          this.warnedDiskFull = true;
+          this.dialog.ask({
+            title: 'Disco cheio',
+            icon: 'warning',
+            message: 'Não há espaço suficiente no disco.\n\nAs últimas alterações serão perdidas ao recarregar a página. Exclua alguns arquivos e esvazie a Lixeira.',
+            buttons: ['OK'],
+          });
+        }
       }
     });
   }
@@ -67,6 +81,19 @@ export class FileSystemService {
       name,
       type: 'file',
       content,
+      parentId
+    };
+
+    this.files.update(all => [...all, newFile]);
+    return newFile;
+  }
+
+  createImageFile(name: string, dataUrl: string, parentId = DESKTOP_ID): VirtualFile {
+    const newFile: VirtualFile = {
+      id: 'img-' + Date.now().toString(),
+      name,
+      type: 'image',
+      content: dataUrl,
       parentId
     };
 

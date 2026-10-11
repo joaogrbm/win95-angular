@@ -1,8 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 import { VirtualFile } from '../../core/models';
 import { FileSystemService } from '../../core/file-system.service';
-import { WindowManagerService } from '../../core/window-manager.service';
-import { NotepadService } from '../notepad/notepad.service';
+import { ShellService } from '../../core/shell.service';
 
 @Component({
   selector: 'app-explorer',
@@ -12,20 +11,11 @@ import { NotepadService } from '../notepad/notepad.service';
 })
 export class ExplorerComponent {
   private fileSystem = inject(FileSystemService);
-  private windowManager = inject(WindowManagerService);
-  private notepad = inject(NotepadService);
+  readonly shell = inject(ShellService);
 
   folderId = input<string | null | undefined>(null);
 
   get items(): VirtualFile[] {
     return this.fileSystem.getItemsInFolder(this.folderId());
-  }
-
-  open(item: VirtualFile) {
-    if (item.type === 'folder') {
-      this.windowManager.openWindow('explorer', { title: item.name, folderId: item.id });
-    } else {
-      this.notepad.openFile(item);
-    }
   }
 }

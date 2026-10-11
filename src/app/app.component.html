@@ -51,7 +51,7 @@
            (click)="selectIcon(item.id, $event)"
            (dblclick)="openItem(item)"
            (contextmenu)="onItemRightClick(item, $event)">
-        <img [src]="item.type === 'folder' ? 'folder.ico' : 'notepad_2.ico'" [alt]="item.name">
+        <img [src]="shell.iconFor(item)" [alt]="item.name">
         <span>{{ item.name }}</span>
       </div>
     }

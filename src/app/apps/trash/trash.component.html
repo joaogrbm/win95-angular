@@ -20,7 +20,7 @@
         <tbody>
           @for (item of items(); track item.id) {
             <tr [class.selected]="selectedId() === item.id" (click)="selectedId.set(item.id)">
-              <td><img [src]="icon(item)" alt=""> {{ item.name }}</td>
+              <td><img [src]="shell.iconFor(item)" alt=""> {{ item.name }}</td>
               <td>{{ fileSystem.getName(item.originalParentId) }}</td>
               <td>{{ item.deletedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
             </tr>

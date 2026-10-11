@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DialogService } from '../../core/dialog/dialog.service';
 import { FileSystemService } from '../../core/file-system.service';
-import { VirtualFile } from '../../core/models';
+import { ShellService } from '../../core/shell.service';
 
 @Component({
   selector: 'app-trash',
@@ -15,6 +15,7 @@ import { VirtualFile } from '../../core/models';
 export class TrashComponent {
   readonly fileSystem = inject(FileSystemService);
   private dialog = inject(DialogService);
+  readonly shell = inject(ShellService);
 
   readonly items = this.fileSystem.trashItems;
   readonly selectedId = signal<string | null>(null);
@@ -59,9 +60,5 @@ export class TrashComponent {
 
     this.fileSystem.emptyTrash();
     this.selectedId.set(null);
-  }
-
-  icon(item: VirtualFile): string {
-    return item.type === 'folder' ? 'folder.ico' : 'notepad_2.ico';
   }
 }

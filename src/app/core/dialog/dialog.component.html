@@ -1,7 +1,4 @@
-@if (dialog.current(); as open) {
-  <!-- @for com track pela própria pergunta recria o diálogo a cada nova pergunta,
-       mesmo quando uma abre logo depois da outra (assim o campo volta a ser focado e selecionado) -->
-  @for (current of [open]; track current) {
+@if (dialog.current(); as current) {
   <div class="dialog-backdrop" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
     <div class="dialog" role="alertdialog" [attr.aria-label]="current.title">
       <div class="dialog-title-bar">
@@ -19,7 +16,8 @@
                    type="text"
                    [value]="dialog.inputValue()"
                    (input)="dialog.inputValue.set($any($event.target).value)"
-                   (keydown.enter)="dialog.answer(current.buttons[0])">
+                   (keydown)="onInputKeydown($event)"
+                   (keyup)="onInputKeyup($event, current.buttons[0])">
           }
         </div>
       </div>
@@ -30,5 +28,4 @@
       </div>
     </div>
   </div>
-  }
 }

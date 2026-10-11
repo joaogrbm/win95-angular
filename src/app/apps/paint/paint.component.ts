@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '../../core/dialog/dialog.service';
+import { FileSystemService } from '../../core/file-system.service';
+import { VirtualFile } from '../../core/models';
 import { WindowManagerService } from '../../core/window-manager.service';
+import { PaintFilesService } from './paint-files.service';
 import {
   FillMode,
   HistoryState,
@@ -36,6 +39,8 @@ const CLICK_TOOLS: ReadonlyArray<PaintTool> = ['fill', 'picker', 'magnifier', 't
 export class PaintComponent implements AfterViewInit, OnDestroy {
   private windowManager = inject(WindowManagerService);
   private dialog = inject(DialogService);
+  private fileSystem = inject(FileSystemService);
+  private paintFiles = inject(PaintFilesService);
 
   @ViewChild('paintCanvas') paintCanvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('paintFileInput') paintFileInputRef?: ElementRef<HTMLInputElement>;
@@ -126,6 +131,16 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     // o título mostra "*" enquanto houver alterações não salvas
     effect(() => this.windowManager.setTitle('paint', this.paintTitle()));
     this.windowManager.setCloseGuard('paint', () => this.paintConfirmDiscard());
+    // abre as imagens pedidas pela área de trabalho ou pelo Explorador
+    effect(() => {
+      const request = this.paintFiles.openRequest();
+      if (request) {
+        untracked(() => {
+          this.paintFiles.openRequest.set(null);
+          this.paintOpenSystemFile(request);
+        });
+      }
+    });
     // foca a caixa de texto assim que ela aparece
     effect(() => this.paintTextInput()?.nativeElement.focus());
   }
@@ -144,6 +159,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.paintPanelObserver?.disconnect();
     this.windowManager.setCloseGuard('paint', null);
+    this.paintFiles.currentFileId.set(null);
   }
 
   // Antes de descartar o desenho (fechar, New, Open), pergunta se quer salvar.
@@ -161,8 +177,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     });
 
     if (answer === 'Sim') {
-      this.paintSaveFile();
-      return true;
+      return this.paintSave();
     }
     return answer === 'Não';
   }
@@ -591,6 +606,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintPolygonPoints = [];
     this.paintPolygonHover = null;
     this.paintFileName.set('untitled');
+    this.paintFiles.currentFileId.set(null);
     this.paintUnsaved.set(false);
     this.paintHistory.set([createHistoryState(blank, 'new document')]);
     this.paintHistoryFuture.set([]);
@@ -764,58 +780,78 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintUnsaved.set(this.paintHistory().length > 0);
   }
 
-  paintSaveFile(): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = this.paintBaseCanvas.width;
-    canvas.height = this.paintBaseCanvas.height;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return;
-    }
-    context.drawImage(this.paintBaseCanvas, 0, 0);
+  // Save: grava o desenho como arquivo do sistema. Na primeira vez pede o nome;
+  // depois atualiza o mesmo arquivo em silêncio. Retorna false se o usuário cancelar.
+  async paintSave(): Promise<boolean> {
+    const dataUrl = this.paintBaseCanvas.toDataURL('image/png');
+    const fileId = this.paintFiles.currentFileId();
+    const existing = fileId ? this.fileSystem.files().find(f => f.id === fileId) : undefined;
 
-    const link = document.createElement('a');
-    link.download = `${this.paintFileName()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    if (existing) {
+      this.fileSystem.updateContent(existing.id, dataUrl);
+    } else {
+      const name = (await this.dialog.prompt('Salvar como', 'Nome do arquivo:', `${this.paintFileName()}.png`))?.trim();
+      if (!name) {
+        return false;
+      }
+      const fileName = /\.png$/i.test(name) ? name : `${name}.png`;
+      const file = this.fileSystem.createImageFile(fileName, dataUrl);
+      this.paintFiles.currentFileId.set(file.id);
+      this.paintFileName.set(fileName.replace(/\.png$/i, ''));
+    }
+
     this.paintUnsaved.set(false);
-    this.updatePaintWindowTitle();
+    this.paintStatusText.set('Saved.');
+    return true;
   }
 
-  paintExportPng(): void {
-    this.paintSaveFile();
+  // Export PNG: baixa o desenho para o computador de verdade.
+  paintDownloadPng(): void {
+    const link = document.createElement('a');
+    link.download = `${this.paintFileName()}.png`;
+    link.href = this.paintBaseCanvas.toDataURL('image/png');
+    link.click();
   }
 
   paintOpenImage(file: File): void {
     const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          return;
-        }
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(image, 0, 0);
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        this.paintDocumentWidth.set(image.width);
-        this.paintDocumentHeight.set(image.height);
-        this.paintSetImage(imageData);
-        this.paintSelection.set(null);
-        // a imagem aberta é o ponto de partida: desfazer não volta para o desenho anterior
-        this.paintHistory.set([createHistoryState(imageData, 'open')]);
-        this.paintHistoryFuture.set([]);
-        this.paintFileName.set(file.name.replace(/\.[^/.]+$/, '') || 'untitled');
-        this.paintUnsaved.set(false);
-        this.updatePaintWindowTitle();
-        this.paintFitToPanel();
-      };
-      image.src = String(reader.result);
-    };
+    reader.onload = () => this.paintLoadImage(String(reader.result), file.name, null);
     reader.readAsDataURL(file);
+  }
+
+  // Abre uma imagem do sistema (pedida pela área de trabalho ou pelo Explorador).
+  private async paintOpenSystemFile(file: VirtualFile): Promise<void> {
+    if (file.id === this.paintFiles.currentFileId() || !file.content) {
+      return;
+    }
+    if (await this.paintConfirmDiscard()) {
+      this.paintLoadImage(file.content, file.name, file.id);
+    }
+  }
+
+  private paintLoadImage(dataUrl: string, name: string, fileId: string | null): void {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+      context.drawImage(image, 0, 0);
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      this.paintSetImage(imageData);
+      this.paintSelection.set(null);
+      // a imagem aberta é o ponto de partida: desfazer não volta para o desenho anterior
+      this.paintHistory.set([createHistoryState(imageData, 'open')]);
+      this.paintHistoryFuture.set([]);
+      this.paintFiles.currentFileId.set(fileId);
+      this.paintFileName.set(name.replace(/\.[^/.]+$/, '') || 'untitled');
+      this.paintUnsaved.set(false);
+      this.paintFitToPanel();
+    };
+    image.src = dataUrl;
   }
 
   paintOnFileSelected(event: Event): void {

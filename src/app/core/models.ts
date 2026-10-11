@@ -16,7 +16,8 @@ export interface WindowItem {
 export interface VirtualFile {
   id: string;
   name: string;
-  type: 'file' | 'folder';
+  // 'file' é texto; 'image' guarda um PNG em data URL no content
+  type: 'file' | 'folder' | 'image';
   content?: string;
   children?: string[];
   parentId: 'desktop' | 'trash' | string;
