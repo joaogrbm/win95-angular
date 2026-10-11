@@ -10,6 +10,7 @@ import { BrowserComponent } from './apps/browser/browser.component';
 import { CalculatorComponent } from './apps/calculator/calculator.component';
 import { ExplorerComponent } from './apps/explorer/explorer.component';
 import { NotepadComponent } from './apps/notepad/notepad.component';
+import { MyComputerComponent } from './apps/my-computer/my-computer.component';
 import { NotepadService } from './apps/notepad/notepad.service';
 import { PaintComponent } from './apps/paint/paint.component';
 import { TrashComponent } from './apps/trash/trash.component';
@@ -24,6 +25,7 @@ import { TrashComponent } from './apps/trash/trash.component';
     CalculatorComponent,
     DialogComponent,
     ExplorerComponent,
+    MyComputerComponent,
     NotepadComponent,
     PaintComponent,
     TrashComponent,

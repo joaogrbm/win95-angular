@@ -13,7 +13,7 @@ export class WindowManagerService {
   private closeGuards = new Map<string, () => boolean | Promise<boolean>>();
 
   readonly windows = signal<WindowItem[]>([
-    { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1, ...CASCADE_START },
+    { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1, width: 400, ...CASCADE_START },
     { id: 'trash', title: 'Lixeira', icon: 'recycle-bin.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'paint', title: 'untitled - Paint', icon: 'pbrush_1.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad_2.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
