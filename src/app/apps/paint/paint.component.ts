@@ -125,7 +125,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintNewDocument();
     // o título mostra "*" enquanto houver alterações não salvas
     effect(() => this.windowManager.setTitle('paint', this.paintTitle()));
-    this.windowManager.setCloseGuard('paint', () => this.paintConfirmClose());
+    this.windowManager.setCloseGuard('paint', () => this.paintConfirmDiscard());
     // foca a caixa de texto assim que ela aparece
     effect(() => this.paintTextInput()?.nativeElement.focus());
   }
@@ -146,8 +146,9 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.windowManager.setCloseGuard('paint', null);
   }
 
-  // Pergunta se quer salvar antes de fechar. Retorna false se o usuário cancelar.
-  private async paintConfirmClose(): Promise<boolean> {
+  // Antes de descartar o desenho (fechar, New, Open), pergunta se quer salvar.
+  // Retorna false se o usuário cancelar.
+  private async paintConfirmDiscard(): Promise<boolean> {
     if (!this.paintUnsaved()) {
       return true;
     }
@@ -724,6 +725,10 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
   paintUndo(): void {
     const current = this.paintHistory();
     const future = this.paintHistoryFuture();
+    // o primeiro estado é a imagem inicial (nova ou aberta): não há nada antes dele para voltar
+    if (current.length <= 1) {
+      return;
+    }
     const snapshot = undoHistoryState(current, future);
     if (snapshot.history.length === current.length) {
       return;
@@ -799,9 +804,14 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
         this.paintDocumentWidth.set(image.width);
         this.paintDocumentHeight.set(image.height);
         this.paintSetImage(imageData);
+        this.paintSelection.set(null);
+        // a imagem aberta é o ponto de partida: desfazer não volta para o desenho anterior
+        this.paintHistory.set([createHistoryState(imageData, 'open')]);
+        this.paintHistoryFuture.set([]);
         this.paintFileName.set(file.name.replace(/\.[^/.]+$/, '') || 'untitled');
         this.paintUnsaved.set(false);
         this.updatePaintWindowTitle();
+        this.paintFitToPanel();
       };
       image.src = String(reader.result);
     };
@@ -817,8 +827,16 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  paintTriggerOpenDialog(): void {
-    this.paintFileInputRef?.nativeElement.click();
+  async paintNewClicked(): Promise<void> {
+    if (await this.paintConfirmDiscard()) {
+      this.paintNewDocument();
+    }
+  }
+
+  async paintTriggerOpenDialog(): Promise<void> {
+    if (await this.paintConfirmDiscard()) {
+      this.paintFileInputRef?.nativeElement.click();
+    }
   }
 
   async paintResizeImage(): Promise<void> {
