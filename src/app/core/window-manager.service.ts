@@ -9,10 +9,10 @@ export class WindowManagerService {
     { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'trash', title: 'Lixeira', icon: 'recycle-bin.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'paint', title: 'untitled - Paint', icon: 'pbrush_1.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
-    { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
-    { id: 'explorer', title: 'Explorador', icon: 'folder.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1, folderId: null },
-    { id: 'internet-explorer', title: 'Internet Explorer', icon: 'folder.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
-    { id: 'calculator', title: 'Calculadora', icon: 'calculator.png', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 }
+    { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad_2.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
+    { id: 'explorer', title: 'Explorador', icon: 'folder.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1, folderId: null },
+    { id: 'internet-explorer', title: 'Internet Explorer', icon: 'internet.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
+    { id: 'calculator', title: 'Calculadora', icon: 'calc.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 }
   ]);
 
   readonly openWindows = computed(() => this.windows().filter(w => w.isOpen));
