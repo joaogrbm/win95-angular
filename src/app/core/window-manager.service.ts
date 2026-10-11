@@ -12,7 +12,7 @@ export class WindowManagerService {
     { id: 'notepad', title: 'Bloco de Notas', icon: 'notepad_2.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
     { id: 'explorer', title: 'Explorador', icon: 'folder.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1, folderId: null },
     { id: 'internet-explorer', title: 'Internet Explorer', icon: 'internet.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 },
-    { id: 'calculator', title: 'Calculadora', icon: 'calc.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1 }
+    { id: 'calculator', title: 'Calculadora', icon: 'calc.ico', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 1, width: 280 }
   ]);
 
   readonly openWindows = computed(() => this.windows().filter(w => w.isOpen));

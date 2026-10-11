@@ -1,31 +1,27 @@
 <div class="calculator-container">
   <input type="text" class="calculator-display" [value]="display()" readonly>
 
-  <div class="btn-group d-flex mb-2" role="group">
+  <div class="calculator-keypad">
+    <button (click)="clear()" class="key-clear">C</button>
+    <button (click)="appendInput('/')">/</button>
+    <button (click)="appendInput('*')">*</button>
+    <button (click)="appendInput('-')">-</button>
+
     <button (click)="appendInput('7')">7</button>
     <button (click)="appendInput('8')">8</button>
     <button (click)="appendInput('9')">9</button>
-    <button (click)="appendInput('*')">*</button>
-  </div>
-  <div class="btn-group d-flex mb-2" role="group">
+    <button (click)="appendInput('+')" class="key-tall">+</button>
+
     <button (click)="appendInput('4')">4</button>
     <button (click)="appendInput('5')">5</button>
     <button (click)="appendInput('6')">6</button>
-    <button (click)="appendInput('-')">-</button>
-  </div>
-  <div class="btn-group d-flex mb-2" role="group">
+
     <button (click)="appendInput('1')">1</button>
     <button (click)="appendInput('2')">2</button>
     <button (click)="appendInput('3')">3</button>
-    <button (click)="appendInput('+')">+</button>
-  </div>
-  <div class="btn-group d-flex mb-2" role="group">
-    <button (click)="appendInput('0')">0</button>
+    <button (click)="calculate()" class="key-tall key-equals">=</button>
+
+    <button (click)="appendInput('0')" class="key-wide">0</button>
     <button (click)="appendInput('.')">.</button>
-    <button (click)="appendInput('/')">/</button>
-    <button (click)="clear()">C</button>
-  </div>
-  <div class="btn-group d-flex mb-2" role="group">
-    <button (click)="calculate()" style="color: #ff0000;">=</button>
   </div>
 </div>

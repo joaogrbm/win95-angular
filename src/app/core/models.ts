@@ -6,6 +6,7 @@ export interface WindowItem {
   isMinimized: boolean;
   isMaximized: boolean;
   zIndex: number;
+  width?: number;
   folderId?: string | null;
 }
 

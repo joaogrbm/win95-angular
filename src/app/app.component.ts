@@ -96,7 +96,7 @@ export class AppComponent implements OnInit, OnDestroy {
     return {
       top: '100px',
       left: '200px',
-      width: '500px',
+      width: `${win.width ?? 500}px`,
       height: 'auto',
       zIndex: win.zIndex,
     };
