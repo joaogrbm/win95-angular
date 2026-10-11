@@ -50,8 +50,28 @@
           (pointermove)="paintPointerMove($event)"
           (pointerup)="paintPointerUp($event)"
           (pointerleave)="paintPointerUp($event)"
+          (dblclick)="paintOnDoubleClick()"
           (contextmenu)="paintOnContextMenu($event)"
         ></canvas>
+
+        @if (paintTextBox(); as box) {
+          <textarea
+            #paintTextInput
+            class="paint-text-box"
+            spellcheck="false"
+            [value]="box.value"
+            [style.left.px]="box.x * paintZoom()"
+            [style.top.px]="box.y * paintZoom()"
+            [style.color]="box.color"
+            [style.font-size.px]="paintFontSize() * paintZoom()"
+            [style.line-height.px]="paintFontSize() * 1.2 * paintZoom()"
+            [style.height.px]="paintTextLines().length * paintFontSize() * 1.2 * paintZoom()"
+            [style.width.ch]="paintTextWidth()"
+            (input)="paintUpdateText($any($event.target).value)"
+            (blur)="paintCommitText()"
+            (keydown.escape)="paintCancelText(); $event.stopPropagation()"
+          ></textarea>
+        }
       </div>
     </div>
   </div>

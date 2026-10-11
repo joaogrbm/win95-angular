@@ -127,6 +127,7 @@
 }
 
 .paint-canvas-wrapper {
+  position: relative;
   max-width: 100%;
   background-color: #fff;
   background-image:
@@ -141,6 +142,20 @@
   border-left: 2px solid #000;
   border-right: 2px solid #fff;
   border-bottom: 2px solid #fff;
+}
+
+.paint-text-box {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: 1px dashed #000080;
+  background: transparent;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  box-sizing: content-box;
 }
 
 .paint-canvas {

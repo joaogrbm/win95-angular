@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '../../core/dialog/dialog.service';
 import { WindowManagerService } from '../../core/window-manager.service';
@@ -31,6 +31,7 @@ const CLICK_TOOLS: ReadonlyArray<PaintTool> = ['fill', 'picker', 'magnifier', 't
   imports: [CommonModule, FormsModule],
   templateUrl: './paint.component.html',
   styleUrls: ['./paint.component.scss'],
+  host: { '(document:keydown.escape)': 'paintCancelPolygon()' },
 })
 export class PaintComponent implements AfterViewInit, OnDestroy {
   private windowManager = inject(WindowManagerService);
@@ -39,6 +40,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
   @ViewChild('paintCanvas') paintCanvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('paintFileInput') paintFileInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('paintCanvasPanel') paintCanvasPanelRef?: ElementRef<HTMLElement>;
+  private paintTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('paintTextInput');
 
   readonly paintTools: ReadonlyArray<{ id: PaintTool; label: string; icon: string }> = [
     { id: 'free-select', label: 'Free-form selection', icon: 'F' },
@@ -89,13 +91,21 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
   paintSelection = signal<SelectionArea | null>(null);
   paintHistory = signal<HistoryState[]>([]);
   paintHistoryFuture = signal<HistoryState[]>([]);
+  // caixa de texto aberta pela ferramenta Texto, em coordenadas da imagem
+  paintTextBox = signal<{ x: number; y: number; value: string; color: string } | null>(null);
+  readonly paintFontSize = computed(() => Math.max(12, this.strokeWidth() * 8));
+  readonly paintTextLines = computed(() => (this.paintTextBox()?.value ?? '').split('\n'));
+  // largura da caixa em "ch": a linha mais longa mais uma folga para o cursor
+  readonly paintTextWidth = computed(() => Math.max(4, ...this.paintTextLines().map(line => line.length)) + 2);
   clipboardImage: ImageData | null = null;
 
   private paintBaseCanvas: HTMLCanvasElement = document.createElement('canvas');
   private paintIsDrawing = false;
   private paintLastPoint: Point | null = null;
   private paintPreview: PreviewShape | null = null;
+  // vértices do polígono em construção e a posição do mouse (ponta da linha "elástica")
   private paintPolygonPoints: Point[] = [];
+  private paintPolygonHover: Point | null = null;
   private paintSelectionStart: Point | null = null;
   // cor do traço atual (primária com botão esquerdo, secundária com o direito) e a outra cor
   private paintActiveColor = '#000000';
@@ -116,6 +126,8 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     // o título mostra "*" enquanto houver alterações não salvas
     effect(() => this.windowManager.setTitle('paint', this.paintTitle()));
     this.windowManager.setCloseGuard('paint', () => this.paintConfirmClose());
+    // foca a caixa de texto assim que ela aparece
+    effect(() => this.paintTextInput()?.nativeElement.focus());
   }
 
   ngAfterViewInit(): void {
@@ -261,6 +273,14 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       this.paintDrawPreview(context);
     }
 
+    if (this.paintPolygonPoints.length > 0) {
+      const points = this.paintPolygonHover ? [...this.paintPolygonPoints, this.paintPolygonHover] : this.paintPolygonPoints;
+      context.save();
+      context.scale(this.paintZoom(), this.paintZoom());
+      this.paintDrawShape(context, { tool: 'polygon', start: points[0], end: points[0], points, open: true });
+      context.restore();
+    }
+
     const selection = this.paintSelection();
     if (selection) {
       context.save();
@@ -325,6 +345,18 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       case 'rounded-rectangle':
         path.roundRect(left, top, width, height, Math.min(20, Math.max(5, Math.min(width, height) / 5)));
         break;
+      case 'polygon': {
+        const [first, ...rest] = shape.points ?? [];
+        if (!first) return;
+        path.moveTo(first.x, first.y);
+        rest.forEach(p => path.lineTo(p.x, p.y));
+        if (shape.open || rest.length < 2) {
+          closed = false;
+        } else {
+          path.closePath();
+        }
+        break;
+      }
       default:
         return;
     }
@@ -458,19 +490,13 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     }
 
     if (tool === 'text') {
-      const value = prompt('Text to insert');
-      if (!value) {
-        return;
+      // com uma caixa aberta, clicar fora grava o texto; senão abre uma nova caixa
+      if (this.paintTextBox()) {
+        this.paintCommitText();
+      } else {
+        this.paintTextBox.set({ x: point.x, y: point.y, value: '', color: selectedColor });
+        this.paintStatusText.set('Type the text. Click outside to apply, Esc to cancel.');
       }
-      const context = this.paintBaseCanvas.getContext('2d');
-      if (!context) {
-        return;
-      }
-      context.font = `${this.strokeWidth() * 8}px MS Sans Serif, Tahoma, sans-serif`;
-      context.fillStyle = selectedColor;
-      context.fillText(value, point.x, point.y + 10);
-      this.paintPushHistory('text');
-      this.paintStatusText.set('Inserted text.');
       return;
     }
 
@@ -561,6 +587,8 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintSetImage(blank);
     this.paintSelection.set(null);
     this.paintPreview = null;
+    this.paintPolygonPoints = [];
+    this.paintPolygonHover = null;
     this.paintFileName.set('untitled');
     this.paintUnsaved.set(false);
     this.paintHistory.set([createHistoryState(blank, 'new document')]);
@@ -573,7 +601,73 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.windowManager.setTitle('paint', this.paintTitle());
   }
 
+  // Grava o texto da caixa na imagem, linha por linha, alinhado com o que aparecia na caixa.
+  paintCommitText(): void {
+    const box = this.paintTextBox();
+    const context = this.paintBaseCanvas.getContext('2d');
+    this.paintTextBox.set(null);
+    if (!box || !box.value.trim() || !context) {
+      return;
+    }
+
+    const fontSize = this.paintFontSize();
+    const lineHeight = Math.round(fontSize * 1.2);
+    context.font = `${fontSize}px 'MS Sans Serif', Tahoma, sans-serif`;
+    context.fillStyle = box.color;
+    context.textBaseline = 'middle';
+    box.value.split('\n').forEach((line, index) => {
+      context.fillText(line, box.x, box.y + index * lineHeight + lineHeight / 2);
+    });
+
+    this.paintRender();
+    this.paintPushHistory('text');
+    this.paintStatusText.set('Inserted text.');
+  }
+
+  paintCancelText(): void {
+    this.paintTextBox.set(null);
+    this.paintStatusText.set(this.paintToolHelp(this.paintTool()));
+  }
+
+  paintUpdateText(value: string): void {
+    this.paintTextBox.update(box => box && { ...box, value });
+  }
+
+  // Fecha o polígono e grava na imagem, com o modo de preenchimento escolhido.
+  paintFinishPolygon(): void {
+    // o duplo clique adiciona vértices repetidos; descarta pontos iguais seguidos
+    const points = this.paintPolygonPoints.filter((p, i, all) => i === 0 || p.x !== all[i - 1].x || p.y !== all[i - 1].y);
+    this.paintPolygonPoints = [];
+    this.paintPolygonHover = null;
+
+    const context = this.paintBaseCanvas.getContext('2d');
+    if (points.length >= 2 && context) {
+      this.paintDrawShape(context, { tool: 'polygon', start: points[0], end: points[0], points });
+      this.paintPushHistory('polygon');
+      this.paintStatusText.set('Polygon committed to the canvas.');
+    }
+    this.paintRender();
+  }
+
+  paintCancelPolygon(): void {
+    if (this.paintPolygonPoints.length === 0) return;
+    this.paintPolygonPoints = [];
+    this.paintPolygonHover = null;
+    this.paintStatusText.set(this.paintToolHelp(this.paintTool()));
+    this.paintRender();
+  }
+
+  paintOnDoubleClick(): void {
+    if (this.paintTool() === 'polygon' && this.paintPolygonPoints.length > 0) {
+      this.paintFinishPolygon();
+    }
+  }
+
   selectPaintTool(tool: PaintTool): void {
+    this.paintCommitText();
+    if (this.paintPolygonPoints.length > 0) {
+      this.paintFinishPolygon();
+    }
     this.paintTool.set(tool);
     this.paintStatusText.set(this.paintToolHelp(tool));
   }
@@ -589,11 +683,11 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       pencil: 'Use the pencil to draw with a one-pixel stroke.',
       brush: 'Use the brush to paint with a rounded tip.',
       airbrush: 'Spray random points around the cursor.',
-      text: 'Click to place text on the canvas.',
+      text: 'Click to type text on the canvas.',
       line: 'Drag to draw a line.',
       curve: 'Drag to draw a curve.',
       rectangle: 'Drag to create a rectangle.',
-      polygon: 'Click points to build a polygon, then double-click to finish.',
+      polygon: 'Click to add points. Double-click or click the first point to close. Esc cancels.',
       ellipse: 'Drag to create an ellipse.',
       'rounded-rectangle': 'Drag to create a rounded rectangle.',
     };
@@ -788,13 +882,16 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    if (tool === 'polygon') {
+      this.paintPolygonPointerDown(point, event);
+      canvas.setPointerCapture(event.pointerId);
+      return;
+    }
+
     this.paintIsDrawing = true;
     canvas.setPointerCapture(event.pointerId);
     this.paintLastPoint = point;
-
-    const isSecondary = event.button === 2;
-    this.paintActiveColor = isSecondary ? this.secondaryColor() : this.primaryColor();
-    this.paintAltColor = isSecondary ? this.primaryColor() : this.secondaryColor();
+    this.paintSetActiveColors(event.button);
 
     switch (tool) {
       case 'pencil':
@@ -825,6 +922,30 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintRender();
   }
 
+  private paintSetActiveColors(button: number): void {
+    const isSecondary = button === 2;
+    this.paintActiveColor = isSecondary ? this.secondaryColor() : this.primaryColor();
+    this.paintAltColor = isSecondary ? this.primaryColor() : this.secondaryColor();
+  }
+
+  private paintPolygonPointerDown(point: Point, event: PointerEvent): void {
+    const points = this.paintPolygonPoints;
+    if (points.length === 0) {
+      // primeiro vértice: as cores valem para o polígono todo
+      this.paintSetActiveColors(event.button);
+      this.paintPolygonPoints = [point];
+    } else if (points.length >= 3 && Math.hypot(point.x - points[0].x, point.y - points[0].y) <= 4) {
+      // clicar perto do ponto inicial fecha o polígono
+      this.paintFinishPolygon();
+      return;
+    }
+
+    this.paintIsDrawing = true;
+    this.paintPolygonHover = point;
+    this.paintStatusText.set(this.paintToolHelp('polygon'));
+    this.paintRender();
+  }
+
   paintPointerMove(event: PointerEvent): void {
     const canvas = this.paintCanvasRef?.nativeElement;
     if (!canvas) {
@@ -833,6 +954,12 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
 
     const point = toCanvasCoordinates(event.clientX, event.clientY, canvas, this.paintZoom());
     this.paintPointer.set(point);
+
+    if (this.paintTool() === 'polygon' && this.paintPolygonPoints.length > 0) {
+      this.paintPolygonHover = point;
+      this.paintRender();
+      return;
+    }
 
     if (!this.paintIsDrawing) {
       this.paintStatusText.set(this.paintToolHelp(this.paintTool()));
@@ -878,6 +1005,13 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       // o histórico guarda o estado depois de cada ação, então só salva quando o traço termina
       if (FREEHAND_TOOLS.includes(tool)) {
         this.paintPushHistory(tool);
+      } else if (tool === 'polygon') {
+        // soltar o botão fixa um vértice onde o mouse está (o primeiro já foi fixado ao apertar)
+        const hover = this.paintPolygonHover;
+        const last = this.paintPolygonPoints[this.paintPolygonPoints.length - 1];
+        if (hover && last && (hover.x !== last.x || hover.y !== last.y)) {
+          this.paintPolygonPoints = [...this.paintPolygonPoints, hover];
+        }
       } else if (this.paintPreview) {
         this.paintCompleteShapeOperation();
       }

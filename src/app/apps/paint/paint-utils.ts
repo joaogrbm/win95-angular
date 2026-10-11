@@ -40,6 +40,9 @@ export interface PreviewShape {
   tool: PaintTool;
   start: Point;
   end: Point;
+  // só para o polígono: os vértices, e se ainda está aberto (em construção)
+  points?: Point[];
+  open?: boolean;
 }
 
 export function createHistoryState(image: ImageData, label = 'action'): HistoryState {
