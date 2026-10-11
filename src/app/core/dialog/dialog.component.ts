@@ -1,4 +1,4 @@
-import { Component, ElementRef, effect, inject, viewChildren } from '@angular/core';
+import { Component, ElementRef, effect, inject, viewChild, viewChildren } from '@angular/core';
 import { DialogService } from './dialog.service';
 
 @Component({
@@ -11,11 +11,21 @@ import { DialogService } from './dialog.service';
 export class DialogComponent {
   readonly dialog = inject(DialogService);
   private buttons = viewChildren<ElementRef<HTMLButtonElement>>('dialogButton');
+  private input = viewChild<ElementRef<HTMLInputElement>>('dialogInput');
 
   readonly icons = { warning: '⚠️', question: '❓', info: 'ℹ️' };
 
   constructor() {
-    // foca o primeiro botão, assim Enter escolhe a opção padrão
-    effect(() => this.buttons()[0]?.nativeElement.focus());
+    // foca o campo de texto (com o texto selecionado) ou o primeiro botão,
+    // assim Enter escolhe a opção padrão
+    effect(() => {
+      const input = this.input()?.nativeElement;
+      if (input) {
+        input.focus();
+        input.select();
+      } else {
+        this.buttons()[0]?.nativeElement.focus();
+      }
+    });
   }
 }

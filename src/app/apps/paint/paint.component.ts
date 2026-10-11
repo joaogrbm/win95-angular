@@ -821,9 +821,14 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintFileInputRef?.nativeElement.click();
   }
 
-  paintResizeImage(): void {
-    const width = Number(prompt('Width', `${this.paintDocumentWidth()}`));
-    const height = Number(prompt('Height', `${this.paintDocumentHeight()}`));
+  async paintResizeImage(): Promise<void> {
+    const widthText = await this.dialog.prompt('Atributos', 'Largura (pixels):', `${this.paintDocumentWidth()}`);
+    if (widthText === null) return;
+    const heightText = await this.dialog.prompt('Atributos', 'Altura (pixels):', `${this.paintDocumentHeight()}`);
+    if (heightText === null) return;
+
+    const width = Math.round(Number(widthText));
+    const height = Math.round(Number(heightText));
     if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
       return;
     }
@@ -855,8 +860,14 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     this.paintPushHistory(horizontal ? 'flip horizontal' : 'flip vertical');
   }
 
-  paintClearImage(): void {
-    if (!confirm('Clear the whole image?')) {
+  async paintClearImage(): Promise<void> {
+    const answer = await this.dialog.ask({
+      title: 'Paint',
+      icon: 'question',
+      message: 'Limpar a imagem inteira?',
+      buttons: ['Sim', 'Não'],
+    });
+    if (answer !== 'Sim') {
       return;
     }
     const blank = this.paintCreateBlankImageData(this.paintDocumentWidth(), this.paintDocumentHeight());

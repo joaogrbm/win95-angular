@@ -50,6 +50,21 @@
   }
 }
 
+.dialog-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+
+  input {
+    @include border-beveled-in;
+    background: #fff;
+    padding: 3px 4px;
+    font-size: 12px;
+    min-width: 220px;
+  }
+}
+
 .dialog-icon {
   font-size: 30px;
   line-height: 1;

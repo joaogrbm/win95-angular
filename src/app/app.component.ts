@@ -54,8 +54,8 @@ export class AppComponent implements OnInit, OnDestroy {
     clearInterval(this.clockTimer);
   }
 
-  createFolder() {
-    const name = prompt('Digite o nome da nova pasta:', 'Nova Pasta');
+  async createFolder() {
+    const name = (await this.dialog.prompt('Nova pasta', 'Digite o nome da nova pasta:', 'Nova Pasta'))?.trim();
     if (!name) return;
     this.fileSystem.createFolder(name);
   }
