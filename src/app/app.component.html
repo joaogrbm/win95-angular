@@ -1,5 +1,5 @@
 <div class="desktop" 
-     (click)="isStartMenuOpen.set(false); closeContextMenu()" 
+     (click)="isStartMenuOpen.set(false); closeContextMenu(); selectedIconId.set(null)" 
      (contextmenu)="onRightClick($event)"> 
 
   @if (contextMenu().isOpen) {
@@ -7,43 +7,52 @@
          [style.top.px]="contextMenu().y" 
          [style.left.px]="contextMenu().x"
          (click)="$event.stopPropagation()"> 
-      <div class="context-menu-item" (click)="createFolder(); closeContextMenu()">
-        📂 Criar Nova Pasta
-      </div>
-      <hr>
-      <div class="context-menu-item disabled" style="color: gray; cursor: not-allowed;">
-        💻 Propriedades
-      </div>
+      @if (contextMenu().item; as item) {
+        <div class="context-menu-item default" (click)="closeContextMenu(); openItem(item)">Abrir</div>
+        <hr>
+        <div class="context-menu-item" (click)="closeContextMenu(); confirmDelete(item)">Excluir</div>
+      } @else {
+        <div class="context-menu-item" (click)="createFolder(); closeContextMenu()">
+          📂 Criar Nova Pasta
+        </div>
+        <hr>
+        <div class="context-menu-item disabled" style="color: gray; cursor: not-allowed;">
+          💻 Propriedades
+        </div>
+      }
     </div>
   }
 
   <div class="desktop-icons">
-    <div class="icon-item" (dblclick)="openWindow('computer')">
+    <div class="icon-item" [class.selected]="selectedIconId() === 'sys-computer'" (click)="selectIcon('sys-computer', $event)" (dblclick)="openWindow('computer')">
       <img src="my-computer.png" alt="Meu Computador">
       <span>Meu Computador</span>
     </div>
-    <div class="icon-item" (dblclick)="openWindow('trash')">
+    <div class="icon-item" [class.selected]="selectedIconId() === 'sys-trash'" (click)="selectIcon('sys-trash', $event)" (dblclick)="openWindow('trash')">
       <img src="recycle-bin.png" alt="Lixeira">
       <span>Lixeira</span>
     </div>
-    <div class="icon-item" (dblclick)="openWindow('paint')">
+    <div class="icon-item" [class.selected]="selectedIconId() === 'sys-paint'" (click)="selectIcon('sys-paint', $event)" (dblclick)="openWindow('paint')">
       <img src="pbrush_1.ico" class="icon-paint" alt="Paint">
       <span>Paint Retro</span>
     </div>
-    <div class="icon-item" (dblclick)="openWindow('calculator')">
+    <div class="icon-item" [class.selected]="selectedIconId() === 'sys-calculator'" (click)="selectIcon('sys-calculator', $event)" (dblclick)="openWindow('calculator')">
       <img src="calc.ico" class="icon-paint" alt="calculator">
       <span>Calculator</span>
     </div>
-    <div class="icon-item" (dblclick)="openWindow('internet-explorer')">
+    <div class="icon-item" [class.selected]="selectedIconId() === 'sys-ie'" (click)="selectIcon('sys-ie', $event)" (dblclick)="openWindow('internet-explorer')">
       <img src="internet.ico" alt="Internet Explorer">
       <span>Internet Explorer</span>
     </div>
 
     @for (item of fileSystem.desktopItems(); track item.id) {
-      <div class="icon-item item-virtual" (dblclick)="openItem(item)">
+      <div class="icon-item"
+           [class.selected]="selectedIconId() === item.id"
+           (click)="selectIcon(item.id, $event)"
+           (dblclick)="openItem(item)"
+           (contextmenu)="onItemRightClick(item, $event)">
         <img [src]="item.type === 'folder' ? 'folder.ico' : 'notepad_2.ico'" [alt]="item.name">
         <span>{{ item.name }}</span>
-        <button class="delete-file-btn" (click)="deleteItem(item.id, $event)">X</button>
       </div>
     }
   </div>
@@ -130,3 +139,5 @@
     <div class="system-tray"><span class="time">{{ currentTime | date:'hh:mm a' }}</span></div>
   </div>
 </div>
+
+<app-dialog />

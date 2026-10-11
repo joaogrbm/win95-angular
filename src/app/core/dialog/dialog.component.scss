@@ -1,0 +1,81 @@
+@use '../../styles/win95' as *;
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog {
+  @include border-beveled-out;
+  background: $color-bg-window;
+  min-width: 280px;
+  max-width: 420px;
+  font-size: 12px;
+}
+
+.dialog-title-bar {
+  background: $color-title-bar-active;
+  color: $color-text-title;
+  font-weight: bold;
+  padding: 3px 4px 3px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  button {
+    @include border-beveled-out;
+    background: $color-bg-window;
+    width: 16px;
+    height: 14px;
+    padding: 0;
+    font-size: 9px;
+    line-height: 10px;
+    cursor: pointer;
+  }
+}
+
+.dialog-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px 8px;
+
+  p {
+    margin: 0;
+    white-space: pre-line;
+  }
+}
+
+.dialog-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px 12px;
+
+  button {
+    @include border-beveled-out;
+    background: $color-bg-window;
+    min-width: 75px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+
+    &:focus {
+      outline: 1px dotted #000;
+      outline-offset: -5px;
+    }
+
+    &:active {
+      @include border-beveled-in;
+    }
+  }
+}

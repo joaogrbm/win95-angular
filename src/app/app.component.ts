@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { VirtualFile, WindowItem } from './core/models';
+import { DialogComponent } from './core/dialog/dialog.component';
+import { DialogService } from './core/dialog/dialog.service';
 import { FileSystemService } from './core/file-system.service';
 import { WindowManagerService } from './core/window-manager.service';
 import { BrowserComponent } from './apps/browser/browser.component';
@@ -19,6 +21,7 @@ import { PaintComponent } from './apps/paint/paint.component';
     DragDropModule,
     BrowserComponent,
     CalculatorComponent,
+    DialogComponent,
     ExplorerComponent,
     NotepadComponent,
     PaintComponent,
@@ -30,11 +33,14 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly windowManager = inject(WindowManagerService);
   readonly fileSystem = inject(FileSystemService);
   readonly notepad = inject(NotepadService);
+  private dialog = inject(DialogService);
 
   private clockTimer?: ReturnType<typeof setInterval>;
   currentTime: Date = new Date();
   isStartMenuOpen = signal<boolean>(false);
-  contextMenu = signal<{ isOpen: boolean; x: number; y: number }>({ isOpen: false, x: 0, y: 0 });
+  selectedIconId = signal<string | null>(null);
+  // item preenchido quando o menu foi aberto sobre um arquivo ou pasta
+  contextMenu = signal<{ isOpen: boolean; x: number; y: number; item?: VirtualFile }>({ isOpen: false, x: 0, y: 0 });
 
   ngOnInit(): void {
     this.clockTimer = setInterval(() => { this.currentTime = new Date(); }, 60000);
@@ -58,13 +64,54 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteItem(id: string, event: Event) {
+  selectIcon(id: string, event: Event) {
     event.stopPropagation();
-    if (confirm('Tem certeza que deseja deletar este item?')) {
-      this.fileSystem.deleteItem(id);
-      if (this.notepad.activeFileId() === id) {
-        this.notepad.newFile();
-      }
+    this.isStartMenuOpen.set(false);
+    this.closeContextMenu();
+    this.selectedIconId.set(id);
+  }
+
+  onItemRightClick(item: VirtualFile, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isStartMenuOpen.set(false);
+    this.selectedIconId.set(item.id);
+    this.contextMenu.set({ isOpen: true, x: event.clientX, y: event.clientY, item });
+  }
+
+  @HostListener('document:keydown.delete', ['$event'])
+  onDeleteKey(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select') || this.dialog.current()) return;
+
+    const item = this.fileSystem.files().find(f => f.id === this.selectedIconId());
+    if (item) {
+      this.confirmDelete(item);
+    }
+  }
+
+  async confirmDelete(item: VirtualFile) {
+    const isFolder = item.type === 'folder';
+    const answer = await this.dialog.ask({
+      title: isFolder ? 'Confirmar exclusão de pasta' : 'Confirmar exclusão de arquivo',
+      icon: 'question',
+      message: isFolder
+        ? `Tem certeza de que deseja excluir a pasta '${item.name}' e todo o seu conteúdo?`
+        : `Tem certeza de que deseja excluir '${item.name}'?`,
+      buttons: ['Sim', 'Não'],
+    });
+    if (answer !== 'Sim') return;
+
+    const deleted = this.fileSystem.deleteItem(item.id);
+    this.selectedIconId.set(null);
+
+    const notepadFileId = this.notepad.activeFileId();
+    if (notepadFileId && deleted.has(notepadFileId)) {
+      this.notepad.newFile();
+    }
+    const explorer = this.windowManager.getWindow('explorer');
+    if (explorer?.isOpen && explorer.folderId && deleted.has(explorer.folderId)) {
+      this.windowManager.closeWindow('explorer');
     }
   }
 
@@ -114,7 +161,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   closeWindow(id: string, event: Event) {
     event.stopPropagation();
-    this.windowManager.closeWindow(id);
+    this.windowManager.requestClose(id);
   }
 
   onRightClick(event: MouseEvent) {

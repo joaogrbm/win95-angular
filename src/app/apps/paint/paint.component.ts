@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DialogService } from '../../core/dialog/dialog.service';
 import { WindowManagerService } from '../../core/window-manager.service';
 import {
   FillMode,
@@ -33,6 +34,7 @@ const CLICK_TOOLS: ReadonlyArray<PaintTool> = ['fill', 'picker', 'magnifier', 't
 })
 export class PaintComponent implements AfterViewInit, OnDestroy {
   private windowManager = inject(WindowManagerService);
+  private dialog = inject(DialogService);
 
   @ViewChild('paintCanvas') paintCanvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('paintFileInput') paintFileInputRef?: ElementRef<HTMLInputElement>;
@@ -111,6 +113,9 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     this.paintNewDocument();
+    // o título mostra "*" enquanto houver alterações não salvas
+    effect(() => this.windowManager.setTitle('paint', this.paintTitle()));
+    this.windowManager.setCloseGuard('paint', () => this.paintConfirmClose());
   }
 
   ngAfterViewInit(): void {
@@ -126,6 +131,27 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.paintPanelObserver?.disconnect();
+    this.windowManager.setCloseGuard('paint', null);
+  }
+
+  // Pergunta se quer salvar antes de fechar. Retorna false se o usuário cancelar.
+  private async paintConfirmClose(): Promise<boolean> {
+    if (!this.paintUnsaved()) {
+      return true;
+    }
+
+    const answer = await this.dialog.ask({
+      title: 'Paint',
+      icon: 'warning',
+      message: `Salvar alterações em ${this.paintFileName()}?`,
+      buttons: ['Sim', 'Não', 'Cancelar'],
+    });
+
+    if (answer === 'Sim') {
+      this.paintSaveFile();
+      return true;
+    }
+    return answer === 'Não';
   }
 
   // Com a janela maximizada, aumenta a imagem para preencher o painel.

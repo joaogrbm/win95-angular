@@ -25,4 +25,14 @@ describe('WindowManagerService', () => {
     service.closeWindow('computer');
     expect(service.openWindows().length).toBe(0);
   });
+
+  it('keeps the window open when its close guard refuses', async () => {
+    service.setCloseGuard('computer', () => Promise.resolve(false));
+    await service.requestClose('computer');
+    expect(service.getWindow('computer')?.isOpen).toBeTrue();
+
+    service.setCloseGuard('computer', () => true);
+    await service.requestClose('computer');
+    expect(service.getWindow('computer')?.isOpen).toBeFalse();
+  });
 });

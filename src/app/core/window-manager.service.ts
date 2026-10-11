@@ -4,6 +4,8 @@ import { WindowItem } from './models';
 @Injectable({ providedIn: 'root' })
 export class WindowManagerService {
   private topZIndex = 10;
+  // um app pode impedir o próprio fechamento (ex.: o Paint perguntando se quer salvar)
+  private closeGuards = new Map<string, () => boolean | Promise<boolean>>();
 
   readonly windows = signal<WindowItem[]>([
     { id: 'computer', title: 'Meu Computador', icon: 'my-computer.png', isOpen: true, isMinimized: false, isMaximized: false, zIndex: 1 },
@@ -46,6 +48,22 @@ export class WindowManagerService {
 
   closeWindow(id: string) {
     this.updateWindow(id, w => ({ ...w, isOpen: false }));
+  }
+
+  async requestClose(id: string) {
+    const guard = this.closeGuards.get(id);
+    if (guard && !(await guard())) {
+      return;
+    }
+    this.closeWindow(id);
+  }
+
+  setCloseGuard(id: string, guard: (() => boolean | Promise<boolean>) | null) {
+    if (guard) {
+      this.closeGuards.set(id, guard);
+    } else {
+      this.closeGuards.delete(id);
+    }
   }
 
   setTitle(id: string, title: string) {

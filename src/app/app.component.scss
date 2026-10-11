@@ -34,6 +34,20 @@
     color: #ffffff;
     text-align: center;
     text-shadow: 1px 1px 1px #000000;
+    padding: 0 2px;
+  }
+
+  // selecionado: ícone azulado e nome com fundo azul, como no Windows
+  &.selected {
+    img {
+      filter: brightness(0.6) sepia(1) hue-rotate(190deg) saturate(5);
+    }
+
+    span {
+      background: $color-title-bar-active;
+      text-shadow: none;
+      outline: 1px dotted #ffffff;
+    }
   }
 }
 
@@ -291,6 +305,15 @@
   padding: 4px 8px;
   font-size: 12px;
   cursor: pointer;
+
+  &.default {
+    font-weight: bold;
+  }
+
+  &:not(.disabled):hover {
+    background: $color-title-bar-active;
+    color: $color-text-title;
+  }
 }
 
 

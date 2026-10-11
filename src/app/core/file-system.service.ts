@@ -46,7 +46,22 @@ export class FileSystemService {
     this.files.update(all => all.map(f => f.id === id ? { ...f, content } : f));
   }
 
-  deleteItem(id: string) {
-    this.files.update(all => all.filter(f => f.id !== id && f.parentId !== id));
+  // Exclui o item e, se for uma pasta, tudo dentro dela (inclusive subpastas).
+  // Retorna os ids excluídos.
+  deleteItem(id: string): Set<string> {
+    const deleted = new Set([id]);
+    let found = true;
+    while (found) {
+      found = false;
+      for (const file of this.files()) {
+        if (!deleted.has(file.id) && deleted.has(file.parentId)) {
+          deleted.add(file.id);
+          found = true;
+        }
+      }
+    }
+
+    this.files.update(all => all.filter(f => !deleted.has(f.id)));
+    return deleted;
   }
 }

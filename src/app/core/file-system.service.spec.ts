@@ -17,6 +17,14 @@ describe('FileSystemService', () => {
     expect(service.files().some(f => f.id === 'fold-1' || f.parentId === 'fold-1')).toBeFalse();
   });
 
+  it('deletes nested subfolders too', () => {
+    const sub = service.createFolder('Sub', 'fold-1');
+    const nested = service.createTextFile('dentro.txt', '', sub.id);
+    const deleted = service.deleteItem('fold-1');
+    expect(deleted.has(nested.id)).toBeTrue();
+    expect(service.files().some(f => f.id === sub.id || f.id === nested.id)).toBeFalse();
+  });
+
   it('updates file content', () => {
     service.updateContent('txt-1', 'novo texto');
     expect(service.files().find(f => f.id === 'txt-1')?.content).toBe('novo texto');

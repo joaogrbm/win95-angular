@@ -1,0 +1,21 @@
+@if (dialog.current(); as current) {
+  <div class="dialog-backdrop" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
+    <div class="dialog" role="alertdialog" [attr.aria-label]="current.title">
+      <div class="dialog-title-bar">
+        <span>{{ current.title }}</span>
+        <button aria-label="Fechar" (click)="dialog.answer(null)">✖</button>
+      </div>
+      <div class="dialog-body">
+        @if (current.icon) {
+          <span class="dialog-icon">{{ icons[current.icon] }}</span>
+        }
+        <p>{{ current.message }}</p>
+      </div>
+      <div class="dialog-buttons">
+        @for (label of current.buttons; track label) {
+          <button #dialogButton (click)="dialog.answer(label)">{{ label }}</button>
+        }
+      </div>
+    </div>
+  </div>
+}
