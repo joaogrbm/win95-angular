@@ -1,16 +1,44 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { VirtualFile } from './models';
 
 export const DESKTOP_ID = 'desktop';
 export const TRASH_ID = 'trash';
+export const FILES_STORAGE_KEY = 'angular95.files';
+
+const DEFAULT_FILES: VirtualFile[] = [
+  { id: 'txt-1', name: 'LEIA-ME.txt', type: 'file', content: 'Bem-vindo ao Windows 95!', parentId: 'desktop' },
+  { id: 'fold-1', name: 'Meus Documentos', type: 'folder', children: ['txt-interno'], parentId: 'desktop' },
+  { id: 'txt-interno', name: 'Segredo.txt', type: 'file', content: 'Você achou este arquivo dentro da pasta!', parentId: 'fold-1' }
+];
+
+// Lê os arquivos salvos no navegador. Se não houver nada (ou os dados estiverem
+// corrompidos, ou o localStorage estiver bloqueado), começa com os arquivos padrão.
+function loadFiles(): VirtualFile[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FILES_STORAGE_KEY) ?? 'null');
+    if (!Array.isArray(saved)) return DEFAULT_FILES;
+    // o JSON guarda datas como texto
+    return saved.map((f: VirtualFile) => f.deletedAt ? { ...f, deletedAt: new Date(f.deletedAt) } : f);
+  } catch {
+    return DEFAULT_FILES;
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
-  readonly files = signal<VirtualFile[]>([
-    { id: 'txt-1', name: 'LEIA-ME.txt', type: 'file', content: 'Bem-vindo ao Windows 95!', parentId: 'desktop' },
-    { id: 'fold-1', name: 'Meus Documentos', type: 'folder', children: ['txt-interno'], parentId: 'desktop' },
-    { id: 'txt-interno', name: 'Segredo.txt', type: 'file', content: 'Você achou este arquivo dentro da pasta!', parentId: 'fold-1' }
-  ]);
+  readonly files = signal<VirtualFile[]>(loadFiles());
+
+  constructor() {
+    // grava a cada mudança, para os arquivos sobreviverem ao recarregar a página
+    effect(() => {
+      const files = this.files();
+      try {
+        localStorage.setItem(FILES_STORAGE_KEY, JSON.stringify(files));
+      } catch {
+        // sem espaço ou localStorage bloqueado: segue só em memória
+      }
+    });
+  }
 
   readonly desktopItems = computed(() => this.files().filter(f => f.parentId === DESKTOP_ID));
   readonly trashItems = computed(() => this.files().filter(f => f.parentId === TRASH_ID));

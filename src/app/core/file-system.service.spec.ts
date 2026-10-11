@@ -1,11 +1,31 @@
 import { TestBed } from '@angular/core/testing';
-import { FileSystemService } from './file-system.service';
+import { FILES_STORAGE_KEY, FileSystemService } from './file-system.service';
 
 describe('FileSystemService', () => {
   let service: FileSystemService;
 
   beforeEach(() => {
+    localStorage.removeItem(FILES_STORAGE_KEY);
     service = TestBed.inject(FileSystemService);
+  });
+
+  afterEach(() => localStorage.removeItem(FILES_STORAGE_KEY));
+
+  it('keeps files and trash after a reload', () => {
+    service.createFolder('Persistente');
+    service.moveToTrash('txt-1');
+    TestBed.flushEffects();
+
+    TestBed.resetTestingModule();
+    const reloaded = TestBed.inject(FileSystemService);
+    expect(reloaded.desktopItems().some(f => f.name === 'Persistente')).toBeTrue();
+    expect(reloaded.trashItems()[0].deletedAt instanceof Date).toBeTrue();
+  });
+
+  it('falls back to the default files when the saved data is corrupted', () => {
+    localStorage.setItem(FILES_STORAGE_KEY, '{quebrado');
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(FileSystemService).files().length).toBe(3);
   });
 
   it('lists the items inside a folder', () => {
