@@ -1,0 +1,14 @@
+<div class="explorer-container">
+  @if (items.length === 0) {
+    <p class="empty-folder-txt">Esta pasta está vazia.</p>
+  } @else {
+    <div class="explorer-grid">
+      @for (subItem of items; track subItem.id) {
+        <div class="explorer-item" (dblclick)="open(subItem)">
+          <img [src]="subItem.type === 'folder' ? 'folder.png' : 'notepad_2.ico'" alt="">
+          <span>{{ subItem.name }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,7 @@
+<div class="notepad-container">
+  <div class="notepad-menu">
+    <button (click)="notepad.newFile()">Novo</button>
+    <button (click)="notepad.saveFile()">Salvar</button>
+  </div>
+  <textarea [ngModel]="notepad.text()" (ngModelChange)="notepad.text.set($event)" class="notepad-textarea"></textarea>
+</div>

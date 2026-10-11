@@ -1,0 +1,92 @@
+<div class="paint-window-shell">
+  <div class="paint-menu-bar">
+    <button class="win95-button" (click)="paintNewDocument()">New</button>
+    <button class="win95-button" (click)="paintTriggerOpenDialog()">Open</button>
+    <button class="win95-button" (click)="paintSaveFile()">Save</button>
+    <button class="win95-button" (click)="paintExportPng()">Export PNG</button>
+    <button class="win95-button" (click)="paintUndo()">Undo</button>
+    <button class="win95-button" (click)="paintRedo()">Redo</button>
+    <button class="win95-button" (click)="paintCutSelection()">Cut</button>
+    <button class="win95-button" (click)="paintCopySelection()">Copy</button>
+    <button class="win95-button" (click)="paintPasteSelection()">Paste</button>
+    <button class="win95-button" (click)="paintDeleteSelection()">Delete</button>
+  </div>
+
+  <div class="paint-main-area">
+    <aside class="paint-toolbox" *ngIf="paintShowToolbox()">
+      <div class="paint-tool-grid">
+        <button
+          *ngFor="let item of paintTools"
+          type="button"
+          class="paint-tool-button"
+          [class.active]="paintTool() === item.id"
+          [title]="item.label"
+          (click)="selectPaintTool(item.id)"
+        >
+          <span>{{ item.icon }}</span>
+        </button>
+      </div>
+
+      <div class="paint-tool-options">
+        <label>
+          Width
+          <input type="number" min="1" max="32" [ngModel]="strokeWidth()" (ngModelChange)="strokeWidth.set($event)" />
+        </label>
+        <label>
+          Fill
+          <select [ngModel]="fillStyle()" (ngModelChange)="fillStyle.set($event)">
+            <option *ngFor="let mode of paintFillModes" [ngValue]="mode.value">{{ mode.label }}</option>
+          </select>
+        </label>
+      </div>
+    </aside>
+
+    <div class="paint-canvas-panel" #paintCanvasPanel>
+      <div class="paint-canvas-wrapper" [style.width.px]="paintDocumentWidth() * paintZoom()" [style.height.px]="paintDocumentHeight() * paintZoom()">
+        <canvas
+          #paintCanvas
+          class="paint-canvas"
+          (pointerdown)="paintPointerDown($event)"
+          (pointermove)="paintPointerMove($event)"
+          (pointerup)="paintPointerUp($event)"
+          (pointerleave)="paintPointerUp($event)"
+          (contextmenu)="paintOnContextMenu($event)"
+        ></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="paint-colorbar" *ngIf="paintShowPalette()">
+    <div class="paint-color-indicators">
+      <div class="paint-swatch-panel">
+        <span>Primary</span>
+        <div class="paint-swatch" [style.background]="primaryColor()"></div>
+      </div>
+      <div class="paint-swatch-panel">
+        <span>Secondary</span>
+        <div class="paint-swatch" [style.background]="secondaryColor()"></div>
+      </div>
+    </div>
+
+    <div class="paint-palette-grid">
+      <button
+        *ngFor="let color of paintPalette"
+        type="button"
+        class="paint-color-box"
+        [style.background]="color"
+        [attr.aria-label]="'Color ' + color"
+        (click)="setPaintPaletteColor(color, 0)"
+        (contextmenu)="setPaintPaletteColor(color, 2); $event.preventDefault()"
+      ></button>
+    </div>
+  </div>
+
+  <div class="paint-statusbar" *ngIf="paintShowStatus()">
+    <span>{{ paintStatusText() }}</span>
+    <span>Mouse: {{ paintPointer().x }}, {{ paintPointer().y }}</span>
+    <span>{{ paintSelectionText() || 'No selection' }}</span>
+    <span>Zoom: {{ paintZoom() }}x</span>
+  </div>
+
+  <input #paintFileInput type="file" hidden accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" (change)="paintOnFileSelected($event)" />
+</div>

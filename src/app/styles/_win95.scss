@@ -1,0 +1,28 @@
+$color-bg-window: #c0c0c0;
+$color-title-bar-inactive: #808080;
+$color-highlight-inner: #dfdfdf;
+$color-title-bar-active: #000080;
+$color-text-title: #ffffff;
+$color-shadow-outer: #000000;
+$color-shadow-inner: #808080;
+$color-highlight-outer: #ffffff;
+
+@mixin border-beveled-out {
+  border-top: 2px solid $color-highlight-outer;
+  border-left: 2px solid $color-highlight-outer;
+  border-right: 2px solid $color-shadow-outer;
+  border-bottom: 2px solid $color-shadow-outer;
+  box-shadow:
+    inset 1px 1px 0px $color-highlight-inner,
+    inset -1px -1px 0px $color-shadow-inner;
+}
+
+@mixin border-beveled-in {
+  border-top: 2px solid $color-shadow-outer;
+  border-left: 2px solid $color-shadow-outer;
+  border-right: 2px solid $color-highlight-outer;
+  border-bottom: 2px solid $color-highlight-outer;
+  box-shadow:
+    inset 1px 1px 0px $color-shadow-inner,
+    inset -1px -1px 0px $color-highlight-inner;
+}
