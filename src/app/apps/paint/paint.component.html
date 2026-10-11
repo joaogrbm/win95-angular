@@ -1,4 +1,4 @@
-<div class="paint-window-shell">
+<div class="paint-window-shell" (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
   <div class="paint-menu-bar">
     <button class="win95-button" (click)="paintNewDocument()">New</button>
     <button class="win95-button" (click)="paintTriggerOpenDialog()">Open</button>

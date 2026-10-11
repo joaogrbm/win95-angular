@@ -20,6 +20,10 @@ import {
   undoHistoryState,
 } from './paint-utils';
 
+const SHAPE_TOOLS: ReadonlyArray<PaintTool> = ['line', 'curve', 'rectangle', 'ellipse', 'rounded-rectangle'];
+const FREEHAND_TOOLS: ReadonlyArray<PaintTool> = ['pencil', 'brush', 'eraser', 'airbrush'];
+const CLICK_TOOLS: ReadonlyArray<PaintTool> = ['fill', 'picker', 'magnifier', 'text'];
+
 @Component({
   selector: 'app-paint',
   standalone: true,
@@ -90,6 +94,10 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
   private paintLastPoint: Point | null = null;
   private paintPreview: PreviewShape | null = null;
   private paintPolygonPoints: Point[] = [];
+  private paintSelectionStart: Point | null = null;
+  // cor do traço atual (primária com botão esquerdo, secundária com o direito) e a outra cor
+  private paintActiveColor = '#000000';
+  private paintAltColor = '#FFFFFF';
   private paintPanelObserver?: ResizeObserver;
 
   readonly paintTitle = computed(() => `${this.paintFileName()}${this.paintUnsaved() ? '*' : ''} - Paint`);
@@ -224,7 +232,7 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     context.drawImage(this.paintBaseCanvas, 0, 0, width, height);
 
     if (this.paintPreview) {
-      this.paintDrawPreview(context, width, height);
+      this.paintDrawPreview(context);
     }
 
     const selection = this.paintSelection();
@@ -242,62 +250,65 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private paintDrawPreview(context: CanvasRenderingContext2D, width: number, height: number): void {
+  private paintDrawPreview(context: CanvasRenderingContext2D): void {
     if (!this.paintPreview) {
       return;
     }
 
     context.save();
-    context.strokeStyle = '#000000';
-    context.fillStyle = '#000000';
-    context.lineWidth = 1;
-    const start = this.paintPreview.start;
-    const end = this.paintPreview.end;
-    const zoom = this.paintZoom();
-    const startX = start.x * zoom;
-    const startY = start.y * zoom;
-    const endX = end.x * zoom;
-    const endY = end.y * zoom;
+    context.scale(this.paintZoom(), this.paintZoom());
+    this.paintDrawShape(context, this.paintPreview);
+    context.restore();
+  }
 
-    switch (this.paintPreview.tool) {
+  // Desenha a forma em coordenadas da imagem. É usada tanto na prévia quanto
+  // no resultado final, para que os dois fiquem idênticos.
+  private paintDrawShape(context: CanvasRenderingContext2D, shape: PreviewShape): void {
+    const { start, end } = shape;
+    const fillMode = this.fillStyle();
+    const left = Math.min(start.x, end.x);
+    const top = Math.min(start.y, end.y);
+    const width = Math.max(1, Math.abs(end.x - start.x));
+    const height = Math.max(1, Math.abs(end.y - start.y));
+
+    context.strokeStyle = this.paintActiveColor;
+    context.fillStyle = fillMode === 'outline-filled' ? this.paintAltColor : this.paintActiveColor;
+    context.lineWidth = this.strokeWidth();
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+
+    const path = new Path2D();
+    let closed = true;
+    switch (shape.tool) {
       case 'line':
-        context.beginPath();
-        context.moveTo(startX, startY);
-        context.lineTo(endX, endY);
-        context.stroke();
+        path.moveTo(start.x, start.y);
+        path.lineTo(end.x, end.y);
+        closed = false;
+        break;
+      case 'curve':
+        path.moveTo(start.x, start.y);
+        path.quadraticCurveTo(start.x + (end.x - start.x) / 2, start.y - 40, end.x, end.y);
+        closed = false;
         break;
       case 'rectangle':
-        context.strokeRect(startX, startY, endX - startX, endY - startY);
+        path.rect(left, top, width, height);
         break;
       case 'ellipse':
-        context.beginPath();
-        context.ellipse(startX, startY, Math.abs(endX - startX), Math.abs(endY - startY), 0, 0, Math.PI * 2);
-        context.stroke();
+        path.ellipse(left + width / 2, top + height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
         break;
       case 'rounded-rectangle':
-        context.beginPath();
-        const radius = 12;
-        const x = Math.min(startX, endX);
-        const y = Math.min(startY, endY);
-        const w = Math.abs(endX - startX);
-        const h = Math.abs(endY - startY);
-        context.moveTo(x + radius, y);
-        context.lineTo(x + w - radius, y);
-        context.quadraticCurveTo(x + w, y, x + w, y + radius);
-        context.lineTo(x + w, y + h - radius);
-        context.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-        context.lineTo(x + radius, y + h);
-        context.quadraticCurveTo(x, y + h, x, y + h - radius);
-        context.lineTo(x, y + radius);
-        context.quadraticCurveTo(x, y, x + radius, y);
-        context.closePath();
-        context.stroke();
+        path.roundRect(left, top, width, height, Math.min(20, Math.max(5, Math.min(width, height) / 5)));
         break;
       default:
-        break;
+        return;
     }
 
-    context.restore();
+    if (closed && fillMode !== 'outline') {
+      context.fill(path);
+    }
+    if (!closed || fillMode !== 'filled') {
+      context.stroke(path);
+    }
   }
 
   private paintDrawStroke(start: Point, end: Point, color: string, erase = false): void {
@@ -434,108 +445,42 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (tool === 'rect-select' || tool === 'free-select') {
-      const currentSelection = this.paintSelection();
-      if (currentSelection) {
-        this.paintSelection.set(null);
-      }
-      const nextSelection: SelectionArea = { x: point.x, y: point.y, width: 1, height: 1 };
-      this.paintSelection.set(nextSelection);
-      this.paintPreview = { tool: tool === 'free-select' ? 'line' : 'rectangle', start: point, end: point };
-      this.paintRender();
-      return;
-    }
   }
 
   private paintCompleteShapeOperation(): void {
-    if (!this.paintPreview) {
-      return;
-    }
-
-    const { start, end } = this.paintPreview;
     const context = this.paintBaseCanvas.getContext('2d');
-    if (!context) {
+    if (!this.paintPreview || !context) {
       return;
     }
 
-    const fillMode = this.fillStyle();
-    const color = this.primaryColor();
-    const left = Math.min(start.x, end.x);
-    const top = Math.min(start.y, end.y);
-    const right = Math.max(start.x, end.x);
-    const bottom = Math.max(start.y, end.y);
-    const width = Math.max(1, right - left);
-    const height = Math.max(1, bottom - top);
-
-    if (this.paintPreview.tool === 'line') {
-      context.beginPath();
-      context.moveTo(start.x, start.y);
-      context.lineTo(end.x, end.y);
-      context.strokeStyle = color;
-      context.lineWidth = this.strokeWidth();
-      context.stroke();
-    }
-
-    if (this.paintPreview.tool === 'rectangle') {
-      if (fillMode !== 'outline') {
-        context.fillStyle = color;
-        context.fillRect(left, top, width, height);
-      }
-      if (fillMode !== 'filled') {
-        context.strokeStyle = color;
-        context.strokeRect(left, top, width, height);
-      }
-    }
-
-    if (this.paintPreview.tool === 'ellipse') {
-      context.beginPath();
-      context.ellipse(left + width / 2, top + height / 2, Math.max(1, width / 2), Math.max(1, height / 2), 0, 0, Math.PI * 2);
-      if (fillMode !== 'outline') {
-        context.fillStyle = color;
-        context.fill();
-      }
-      if (fillMode !== 'filled') {
-        context.strokeStyle = color;
-        context.stroke();
-      }
-    }
-
-    if (this.paintPreview.tool === 'rounded-rectangle') {
-      const radius = Math.min(20, Math.max(5, Math.min(width, height) / 5));
-      const drawRect = new Path2D();
-      drawRect.moveTo(left + radius, top);
-      drawRect.lineTo(right - radius, top);
-      drawRect.quadraticCurveTo(right, top, right, top + radius);
-      drawRect.lineTo(right, bottom - radius);
-      drawRect.quadraticCurveTo(right, bottom, right - radius, bottom);
-      drawRect.lineTo(left + radius, bottom);
-      drawRect.quadraticCurveTo(left, bottom, left, bottom - radius);
-      drawRect.lineTo(left, top + radius);
-      drawRect.quadraticCurveTo(left, top, left + radius, top);
-      drawRect.closePath();
-      if (fillMode !== 'outline') {
-        context.fillStyle = color;
-        context.fill(drawRect);
-      }
-      if (fillMode !== 'filled') {
-        context.strokeStyle = color;
-        context.stroke(drawRect);
-      }
-    }
-
-    if (this.paintPreview.tool === 'curve') {
-      context.beginPath();
-      context.moveTo(start.x, start.y);
-      context.quadraticCurveTo(start.x + (end.x - start.x) / 2, start.y - 40, end.x, end.y);
-      context.strokeStyle = color;
-      context.lineWidth = this.strokeWidth();
-      context.stroke();
-    }
-
+    this.paintDrawShape(context, this.paintPreview);
     this.paintPreview = null;
     this.paintPushHistory('shape');
     this.paintStatusText.set('Shape committed to the canvas.');
     this.paintRender();
+  }
+
+  // Retangular: do ponto inicial até o mouse. Livre: caixa que envolve todo o caminho percorrido.
+  private paintUpdateSelection(point: Point): void {
+    const start = this.paintSelectionStart;
+    if (!start) {
+      return;
+    }
+
+    let left = Math.min(start.x, point.x);
+    let top = Math.min(start.y, point.y);
+    let right = Math.max(start.x, point.x);
+    let bottom = Math.max(start.y, point.y);
+
+    const current = this.paintSelection();
+    if (this.paintTool() === 'free-select' && current) {
+      left = Math.min(left, current.x);
+      top = Math.min(top, current.y);
+      right = Math.max(right, current.x + current.width);
+      bottom = Math.max(bottom, current.y + current.height);
+    }
+
+    this.paintSelection.set({ x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) });
   }
 
   private paintApplySelectionOperation(action: 'cut' | 'copy' | 'paste' | 'delete'): void {
@@ -804,60 +749,51 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
 
     event.preventDefault();
     event.stopPropagation();
-    this.paintIsDrawing = true;
-    canvas.setPointerCapture(event.pointerId);
 
     const point = toCanvasCoordinates(event.clientX, event.clientY, canvas, this.paintZoom());
+    const tool = this.paintTool();
     this.paintPointer.set(point);
-    this.paintLastPoint = point;
 
-    if (this.paintTool() === 'pencil') {
-      this.paintPushHistory('pencil');
-      this.paintDrawStroke(point, point, this.primaryColor());
-      this.paintStatusText.set('Drawing on the canvas.');
-      return;
-    }
-
-    if (this.paintTool() === 'brush') {
-      this.paintPushHistory('brush');
-      this.paintDrawBrush(point, point, this.primaryColor());
-      return;
-    }
-
-    if (this.paintTool() === 'eraser') {
-      this.paintPushHistory('eraser');
-      this.paintDrawStroke(point, point, '#000000', true);
-      return;
-    }
-
-    if (this.paintTool() === 'airbrush') {
-      this.paintPushHistory('airbrush');
-      this.paintDrawAirbrush(point, this.primaryColor());
-      return;
-    }
-
-    if (this.paintTool() === 'line' || this.paintTool() === 'rectangle' || this.paintTool() === 'ellipse' || this.paintTool() === 'rounded-rectangle' || this.paintTool() === 'curve') {
-      this.paintPreview = { tool: this.paintTool(), start: point, end: point };
-      this.paintStatusText.set(this.paintToolHelp(this.paintTool()));
-      return;
-    }
-
-    if (this.paintTool() === 'fill' || this.paintTool() === 'picker' || this.paintTool() === 'magnifier' || this.paintTool() === 'text') {
+    if (CLICK_TOOLS.includes(tool)) {
       this.paintToolActivated(point, event.button);
       return;
     }
 
-    if (this.paintTool() === 'rect-select') {
-      this.paintSelection.set({ x: point.x, y: point.y, width: 1, height: 1 });
-      this.paintPreview = { tool: 'rectangle', start: point, end: point };
-      return;
+    this.paintIsDrawing = true;
+    canvas.setPointerCapture(event.pointerId);
+    this.paintLastPoint = point;
+
+    const isSecondary = event.button === 2;
+    this.paintActiveColor = isSecondary ? this.secondaryColor() : this.primaryColor();
+    this.paintAltColor = isSecondary ? this.primaryColor() : this.secondaryColor();
+
+    switch (tool) {
+      case 'pencil':
+        this.paintDrawStroke(point, point, this.paintActiveColor);
+        this.paintStatusText.set('Drawing on the canvas.');
+        break;
+      case 'brush':
+        this.paintDrawBrush(point, point, this.paintActiveColor);
+        break;
+      case 'eraser':
+        this.paintDrawStroke(point, point, '#000000', true);
+        break;
+      case 'airbrush':
+        this.paintDrawAirbrush(point, this.paintActiveColor);
+        break;
+      case 'rect-select':
+      case 'free-select':
+        this.paintSelectionStart = point;
+        this.paintSelection.set({ x: point.x, y: point.y, width: 1, height: 1 });
+        break;
+      default:
+        if (SHAPE_TOOLS.includes(tool)) {
+          this.paintPreview = { tool, start: point, end: point };
+          this.paintStatusText.set(this.paintToolHelp(tool));
+        }
     }
 
-    if (this.paintTool() === 'free-select') {
-      this.paintSelection.set({ x: point.x, y: point.y, width: 1, height: 1 });
-      this.paintPreview = { tool: 'line', start: point, end: point };
-      return;
-    }
+    this.paintRender();
   }
 
   paintPointerMove(event: PointerEvent): void {
@@ -874,41 +810,32 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.paintTool() === 'pencil') {
-      const color = event.button === 2 ? this.secondaryColor() : this.primaryColor();
-      if (this.paintLastPoint) {
-        this.paintDrawStroke(this.paintLastPoint, point, color);
-      }
-      this.paintLastPoint = point;
-      return;
+    const last = this.paintLastPoint ?? point;
+    switch (this.paintTool()) {
+      case 'pencil':
+        this.paintDrawStroke(last, point, this.paintActiveColor);
+        break;
+      case 'brush':
+        this.paintDrawBrush(last, point, this.paintActiveColor);
+        break;
+      case 'eraser':
+        this.paintDrawStroke(last, point, '#000000', true);
+        break;
+      case 'airbrush':
+        this.paintDrawAirbrush(point, this.paintActiveColor);
+        break;
+      case 'rect-select':
+      case 'free-select':
+        this.paintUpdateSelection(point);
+        break;
+      default:
+        if (this.paintPreview) {
+          this.paintPreview.end = point;
+        }
     }
 
-    if (this.paintTool() === 'brush') {
-      const color = event.button === 2 ? this.secondaryColor() : this.primaryColor();
-      if (this.paintLastPoint) {
-        this.paintDrawBrush(this.paintLastPoint, point, color);
-      }
-      this.paintLastPoint = point;
-      return;
-    }
-
-    if (this.paintTool() === 'eraser') {
-      if (this.paintLastPoint) {
-        this.paintDrawStroke(this.paintLastPoint, point, '#000000', true);
-      }
-      this.paintLastPoint = point;
-      return;
-    }
-
-    if (this.paintTool() === 'airbrush') {
-      this.paintDrawAirbrush(point, event.button === 2 ? this.secondaryColor() : this.primaryColor());
-      return;
-    }
-
-    if (this.paintPreview) {
-      this.paintPreview.end = point;
-      this.paintRender();
-    }
+    this.paintLastPoint = point;
+    this.paintRender();
   }
 
   paintPointerUp(event: PointerEvent): void {
@@ -917,13 +844,20 @@ export class PaintComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.paintIsDrawing && this.paintPreview && ['line', 'rectangle', 'ellipse', 'rounded-rectangle', 'curve'].includes(this.paintPreview.tool)) {
-      this.paintCompleteShapeOperation();
+    if (this.paintIsDrawing) {
+      const tool = this.paintTool();
+      // o histórico guarda o estado depois de cada ação, então só salva quando o traço termina
+      if (FREEHAND_TOOLS.includes(tool)) {
+        this.paintPushHistory(tool);
+      } else if (this.paintPreview) {
+        this.paintCompleteShapeOperation();
+      }
     }
 
     this.paintIsDrawing = false;
     this.paintLastPoint = null;
     this.paintPreview = null;
+    this.paintSelectionStart = null;
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
